@@ -1041,25 +1041,25 @@
         }
       }
     },
-    "All of Ksign files except certificates are contained in the documents directory, here are some quick links to these." : {
+    "All of NexStore files except certificates are contained in the documents directory, here are some quick links to these." : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "جميع ملفات Ksign، باستثناء الشهادات، موجودة داخل مجلد Documents. إليك بعض الروابط السريعة لها."
+            "value" : "جميع ملفات NexStore، باستثناء الشهادات، موجودة داخل مجلد Documents. إليك بعض الروابط السريعة لها."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle von Ksign verwendete Dateien außer Zertifikate sind im Dokumenten-Verzeichnis zu finden. Hier sind ein paar Schnellvereweisungen zu diesen."
+            "value" : "Alle von NexStore verwendete Dateien außer Zertifikate sind im Dokumenten-Verzeichnis zu finden. Hier sind ein paar Schnellvereweisungen zu diesen."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tất cả các tệp của Ksign trừ chứng chỉ được chứa trong thư mục tài liệu, đây là một số liên kết nhanh đến chúng."
+            "value" : "Tất cả các tệp của NexStore trừ chứng chỉ được chứa trong thư mục tài liệu, đây là một số liên kết nhanh đến chúng."
           }
         }
       }
@@ -12232,7 +12232,7 @@
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cái này sẽ bật hiệu ứng Liquid Glass cho Ksign, yêu cầu khởi động lại app"
+            "value" : "Cái này sẽ bật hiệu ứng Liquid Glass cho NexStore, yêu cầu khởi động lại app"
           }
         }
       }
@@ -13179,25 +13179,25 @@
         }
       }
     },
-    "Whether to remember the last location where a file was copied/moved to or use Ksign's documents folder as default." : {
+    "Whether to remember the last location where a file was copied/moved to or use NexStore's documents folder as default." : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "حدد ما إذا كنت تريد تذكّر آخر موقع تم نسخ / نقل ملف إليه، أو استخدام مجلد Documents الخاص بـ Ksign كخيار افتراضي."
+            "value" : "حدد ما إذا كنت تريد تذكّر آخر موقع تم نسخ / نقل ملف إليه، أو استخدام مجلد Documents الخاص بـ NexStore كخيار افتراضي."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ob die zuletzt kopierte wo eine Datei kopiert oder bewegt wurde erinnern, oder man KSigns Dokumenten-Ordner als Standart verwenden soll"
+            "value" : "Ob die zuletzt kopierte wo eine Datei kopiert oder bewegt wurde erinnern, oder man NexStores Dokumenten-Ordner als Standart verwenden soll"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Khi muốn di chuyển file mà muốn dùng thư mục chính của Ksign thì tắt, ngược lại dùng vị trí cuối dùng thì bật."
+            "value" : "Khi muốn di chuyển file mà muốn dùng thư mục chính của NexStore thì tắt, ngược lại dùng vị trí cuối dùng thì bật."
           }
         }
       }

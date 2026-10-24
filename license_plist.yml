@@ -3,7 +3,7 @@ options:
     - LICENSE
   packagePaths:
     - Package.swift
-  prefix: nya.asami.ksign
+  prefix: nexsideloading.nexstore
   xcworkspacePath: "*.xcworkspace"
   addVersionNumbers: false
   singlePage: false

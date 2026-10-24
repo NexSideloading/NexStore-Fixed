@@ -34,7 +34,7 @@ struct ArchiveView: View {
             Section {
                 Toggle(.localized("Use last copied location"), systemImage: "clock.arrow.circlepath", isOn: $_useLastExportLocation)
             } footer: {
-                Text(.localized("Whether to remember the last location where a file was copied/moved to or use Ksign's documents folder as default."))
+                Text(.localized("Whether to remember the last location where a file was copied/moved to or use NexStore's documents folder as default."))
             }
 
             Section {
