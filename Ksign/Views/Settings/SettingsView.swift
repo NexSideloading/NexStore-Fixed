@@ -30,7 +30,7 @@ struct SettingsView: View {
     
 	private let _donationsUrl = "https://github.com/sponsors/nyasami"
 	private let _githubUrl = "https://github.com/nyasami/ksign"
-    private let _discordUrl = "https://discord.gg/sfbZfQzVdQ"
+    private let _discordUrl = "https://discord.gg/nXYUhP6N4N"
 	// MARK: Body
     var body: some View {
 		NBNavigationView(.localized("Settings")) {

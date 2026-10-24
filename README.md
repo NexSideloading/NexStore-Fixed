@@ -15,7 +15,7 @@ Another reason is this app was built specifically for Khoindvn to share his cert
 ## Help
 You can create your Issue at [Issue](https://github.com/Nyasami/Ksign-public/issues), this will also be the place for you to request a new feature so feel free to make one!
 
-You can also join NexStore Discord [here](https://discord.gg/sfbZfQzVdQ) for better communication.
+You can also join NexSideloading Discord [here](https://discord.gg/nXYUhP6N4N) for better communication.
 
 ## Download
 Go to [Releases](https://github.com/Nyasami/Ksign-public/releases) and download the newest ipa from there.
