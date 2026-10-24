@@ -37,7 +37,7 @@ jobs:
           fi
           COMMIT_MSG=$(git log -1 --pretty=%B)
           echo "## Commit: \`$COMMIT_MSG\` (${{ github.sha }})" >> release_notes.md
-          echo "### New in this build (Compared to $LATEST_OFFICIAL_TAG):" >> release_notes.md
+          echo "### New in this NexStore build (Compared to $LATEST_OFFICIAL_TAG):" >> release_notes.md
             
           CHANGES=$(git log --pretty=format:"* %s (%h)" ${LATEST_OFFICIAL_TAG}..HEAD)
             
@@ -53,7 +53,7 @@ jobs:
 
           gh release delete beta --cleanup-tag -y || true
           
-          gh release create beta "packages/Ksign.ipa" \
+          gh release create beta "packages/NexStore.ipa" \
             --title "Latest Beta Build" \
             --notes "$(cat release_notes.md)" \
             --prerelease \
