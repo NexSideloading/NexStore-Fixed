@@ -155,40 +155,6 @@ enum FR {
 		HeartbeatManager.shared.start(true)
 	}
 	
-	#if SERVER
-	static func downloadSSLCertificates(
-		from urlString: String,
-		completion: @escaping (Bool) -> Void
-	) {
-		let generator = UINotificationFeedbackGenerator()
-		generator.prepare()
-		
-		NBFetchService().fetch(from: urlString) { (result: Result<ServerPackModel, Error>) in
-			switch result {
-			case .success(let pack):
-				do {
-					let serverDir = URL.documentsDirectory.appendingPathComponent("App").appendingPathComponent("Server")
-					let pemURL = serverDir.appendingPathComponent("server.pem")
-					let crtURL = serverDir.appendingPathComponent("server.crt")
-					let commonNameURL = serverDir.appendingPathComponent("commonName.txt")
-					
-					try FileManager.default.createDirectoryIfNeeded(at: serverDir)
-					try pack.key.write(to: pemURL, atomically: true, encoding: .utf8)
-					try pack.cert.write(to: crtURL, atomically: true, encoding: .utf8)
-					try pack.info.domains.commonName.write(to: commonNameURL, atomically: true, encoding: .utf8)
-					
-					generator.notificationOccurred(.success)
-					completion(true)
-				} catch {
-					completion(false)
-				}
-			case .failure(_):
-				completion(false)
-			}
-		}
-	}
-	#endif
-	
 	static func handleSource(
 		_ urlString: String,
 		competion: @escaping () -> Void

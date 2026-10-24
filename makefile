@@ -17,12 +17,14 @@ clean:
 deps:
 	rm -rf deps || true
 	mkdir -p deps
-	curl -L -o deps/server.crt https://backloop.dev/backloop.dev-cert.crt || true
-	curl -L -o deps/server.key1 https://backloop.dev/backloop.dev-key.part1.pem || true
-	curl -L -o deps/server.key2 https://backloop.dev/backloop.dev-key.part2.pem || true
-	cat deps/server.key1 deps/server.key2 > deps/server.pem 2>/dev/null || true
-	rm -f deps/server.key1 deps/server.key2
-	echo "*.backloop.dev" > deps/commonName.txt
+	curl -L -o deps/server.crt.part1 https://sideloading.net/local/server.crt.part1 || true
+	curl -L -o deps/server.crt.part2 https://sideloading.net/local/server.crt.part2 || true
+	curl -L -o deps/server.pem.part1 https://sideloading.net/local/server.pem.part1 || true
+	curl -L -o deps/server.pem.part2 https://sideloading.net/local/server.pem.part2 || true
+	cat deps/server.crt.part1 deps/server.crt.part2 > deps/server.crt 2>/dev/null || true
+	cat deps/server.pem.part1 deps/server.pem.part2 > deps/server.pem 2>/dev/null || true
+	rm -f deps/server.crt.part1 deps/server.crt.part2 deps/server.pem.part1 deps/server.pem.part2
+	echo "local.sideloading.net" > deps/commonName.txt
 
 $(SCHEMES): deps
 	xcodebuild \

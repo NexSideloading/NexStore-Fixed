@@ -5,6 +5,9 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Beta
@@ -25,7 +28,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          LATEST_OFFICIAL_TAG=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null || echo "")
+          LATEST_OFFICIAL_TAG=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null || true)
+
+          if [ -z "$LATEST_OFFICIAL_TAG" ]; then
+            echo "No official release tag found yet. Treating this as the first release."
+          else
+            echo "Latest official tag: $LATEST_OFFICIAL_TAG"
+          fi
           COMMIT_MSG=$(git log -1 --pretty=%B)
           echo "## Commit: \`$COMMIT_MSG\` (${{ github.sha }})" >> release_notes.md
           echo "### New in this build (Compared to $LATEST_OFFICIAL_TAG):" >> release_notes.md
