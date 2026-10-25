@@ -33,6 +33,15 @@ class ServerInstaller: Identifiable, ObservableObject {
 		try _configureRoutes()
 		try _server.server.start()
 		_needsShutdown = true
+		
+		// Check for certificate updates in background
+		Task {
+			do {
+				try await Self.checkForCertificateUpdates()
+			} catch {
+				print("Certificate update check failed: \(error.localizedDescription)")
+			}
+		}
 	}
 	
 	deinit {
