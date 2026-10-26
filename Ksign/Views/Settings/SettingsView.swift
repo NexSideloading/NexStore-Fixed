@@ -13,18 +13,46 @@ struct SettingsView: View {
     @AppStorage("feather.selectedCert") private var _storedSelectedCert: Int = 0
     @FetchRequest(
         entity: CertificatePair.entity(),
-        sortDescriptors: [NSSortDescriptor(keyPath: \CertificatePair.date, ascending: false)],
+        sortDescriptors: [],
         animation: .snappy
     ) private var _certificates: FetchedResults<CertificatePair>
-    
+
+    private var sortedCertificates: [CertificatePair] {
+        return _certificates.sorted { cert1, cert2 in
+            // First, sort by revoked status (false/valid first, true/revoked last)
+            if cert1.revoked != cert2.revoked {
+                return !cert1.revoked && cert2.revoked
+            }
+
+            // Within the same revoked status, sort by expiry date (latest first)
+            let expiry1 = _getEarliestExpiry(for: cert1)
+            let expiry2 = _getEarliestExpiry(for: cert2)
+
+            return expiry1 > expiry2
+        }
+    }
+
+    private func _getEarliestExpiry(for cert: CertificatePair) -> Date {
+        var earliestExpiry = cert.expiration ?? Date.distantFuture
+
+        // Check mobileprovision expiry if available
+        if let provisionFile = Storage.shared.getFile(.provision, from: cert),
+           let provision = Storage.shared.getProvisionFileDecoded(for: cert) {
+            let provisionExpiry = provision.expirationDate ?? Date.distantFuture
+            earliestExpiry = min(earliestExpiry, provisionExpiry)
+        }
+
+        return earliestExpiry
+    }
+
     private var selectedCertificate: CertificatePair? {
         guard
             _storedSelectedCert >= 0,
-            _storedSelectedCert < _certificates.count
+            _storedSelectedCert < sortedCertificates.count
         else {
             return nil
         }
-        return _certificates[_storedSelectedCert]
+        return sortedCertificates[_storedSelectedCert]
     }
     
     
@@ -58,6 +86,24 @@ struct SettingsView: View {
                 } footer: {
                     Text(.localized("Add and manage certificates used for signing applications."))
                 }
+                .onAppear {
+					// Update the selected index to match the sorted order
+					if _storedSelectedCert >= 0 && _storedSelectedCert < _certificates.count {
+						let currentUUID = _certificates[_storedSelectedCert].uuid
+						if let newIndex = sortedCertificates.firstIndex(where: { $0.uuid == currentUUID }) {
+							_storedSelectedCert = newIndex
+						}
+					}
+				}
+				.onChange(of: _certificates.count) { _, _ in
+					// Update the selected index when certificates change
+					if _storedSelectedCert >= 0 && _storedSelectedCert < _certificates.count {
+						let currentUUID = _certificates[_storedSelectedCert].uuid
+						if let newIndex = sortedCertificates.firstIndex(where: { $0.uuid == currentUUID }) {
+							_storedSelectedCert = newIndex
+						}
+					}
+				}
 
                 Section {
                     NavigationLink(destination: NexDNSSettingsView()) {

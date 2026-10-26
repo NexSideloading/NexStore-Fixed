@@ -12,23 +12,53 @@ import UIKit
 // MARK: - View
 struct CertificatesView: View {
 	@AppStorage("feather.selectedCert") private var _storedSelectedCert: Int = 0
-	
+
 	@State private var _isAddingPresenting = false
 	@State private var _isSelectedInfoPresenting: CertificatePair?
 
 	// MARK: Fetch
 	@FetchRequest(
 		entity: CertificatePair.entity(),
-		sortDescriptors: [NSSortDescriptor(keyPath: \CertificatePair.date, ascending: false)],
+		sortDescriptors: [],
 		animation: .snappy
 	) private var certificates: FetchedResults<CertificatePair>
-	
+
+	// MARK: Computed Properties
+	private var sortedCertificates: [CertificatePair] {
+		return certificates.sorted { cert1, cert2 in
+			// First, sort by revoked status (false/valid first, true/revoked last)
+			if cert1.revoked != cert2.revoked {
+				return !cert1.revoked && cert2.revoked
+			}
+
+			// Within the same revoked status, sort by expiry date (latest first)
+			// Use the earlier of P12 and mobileprovision expiry dates
+		 let expiry1 = _getEarliestExpiry(for: cert1)
+		 let expiry2 = _getEarliestExpiry(for: cert2)
+
+			return expiry1 > expiry2
+		}
+	}
+
+	private func _getEarliestExpiry(for cert: CertificatePair) -> Date {
+		var earliestExpiry = cert.expiration ?? Date.distantFuture
+
+		// Check mobileprovision expiry if available
+		if let provisionFile = Storage.shared.getFile(.provision, from: cert),
+		   let provision = Storage.shared.getProvisionFileDecoded(for: cert) {
+			let provisionExpiry = provision.expirationDate ?? Date.distantFuture
+			earliestExpiry = min(earliestExpiry, provisionExpiry)
+		}
+
+		return earliestExpiry
+	}
+
 	//
 	private var _bindingSelectedCert: Binding<Int>?
 	private var _selectedCertBinding: Binding<Int> {
 		_bindingSelectedCert ?? $_storedSelectedCert
 	}
-	
+
 	init(selectedCert: Binding<Int>? = nil) {
 		self._bindingSelectedCert = selectedCert
 	}
@@ -36,7 +66,7 @@ struct CertificatesView: View {
 	// MARK: Body
 	var body: some View {
 		NBGrid {
-			ForEach(Array(certificates.enumerated()), id: \.element.uuid) { index, cert in
+			ForEach(Array(sortedCertificates.enumerated()), id: \.element.uuid) { index, cert in
 				_cellButton(for: cert, at: index)
 			}
 		}
@@ -87,6 +117,15 @@ struct CertificatesView: View {
 		.sheet(isPresented: $_isAddingPresenting) {
 			CertificatesAddView()
 				.presentationDetents([.medium])
+		}
+		.onAppear {
+			// Update the selected index to match the sorted order
+			if _selectedCertBinding.wrappedValue >= 0 && _selectedCertBinding.wrappedValue < certificates.count {
+				let currentUUID = certificates[_selectedCertBinding.wrappedValue].uuid
+				if let newIndex = sortedCertificates.firstIndex(where: { $0.uuid == currentUUID }) {
+					_selectedCertBinding.wrappedValue = newIndex
+				}
+			}
 		}
 	}
 }

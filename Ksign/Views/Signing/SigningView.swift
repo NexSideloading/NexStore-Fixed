@@ -31,13 +31,41 @@ struct SigningView: View {
 	// MARK: Fetch
 	@FetchRequest(
 		entity: CertificatePair.entity(),
-		sortDescriptors: [NSSortDescriptor(keyPath: \CertificatePair.date, ascending: false)],
+		sortDescriptors: [],
 		animation: .snappy
 	) private var certificates: FetchedResults<CertificatePair>
-	
+
+	private var sortedCertificates: [CertificatePair] {
+		return certificates.sorted { cert1, cert2 in
+			// First, sort by revoked status (false/valid first, true/revoked last)
+			if cert1.revoked != cert2.revoked {
+				return !cert1.revoked && cert2.revoked
+			}
+
+			// Within the same revoked status, sort by expiry date (latest first)
+			let expiry1 = _getEarliestExpiry(for: cert1)
+			let expiry2 = _getEarliestExpiry(for: cert2)
+
+			return expiry1 > expiry2
+		}
+	}
+
+	private func _getEarliestExpiry(for cert: CertificatePair) -> Date {
+		var earliestExpiry = cert.expiration ?? Date.distantFuture
+
+		// Check mobileprovision expiry if available
+		if let provisionFile = Storage.shared.getFile(.provision, from: cert),
+		   let provision = Storage.shared.getProvisionFileDecoded(for: cert) {
+			let provisionExpiry = provision.expirationDate ?? Date.distantFuture
+			earliestExpiry = min(earliestExpiry, provisionExpiry)
+		}
+
+		return earliestExpiry
+	}
+
 	private func _selectedCert() -> CertificatePair? {
-		guard certificates.indices.contains(_temporaryCertificate) else { return nil }
-		return certificates[_temporaryCertificate]
+		guard sortedCertificates.indices.contains(_temporaryCertificate) else { return nil }
+		return sortedCertificates[_temporaryCertificate]
 	}
 	
 	private func _getCertAppID() -> String? {
@@ -227,6 +255,15 @@ extension SigningView {
 					CertificatesCellView(
 						cert: cert
 					)
+				}
+			}
+		}
+		.onAppear {
+			// Update the selected index to match the sorted order
+			if _temporaryCertificate >= 0 && _temporaryCertificate < certificates.count {
+				let currentUUID = certificates[_temporaryCertificate].uuid
+				if let newIndex = sortedCertificates.firstIndex(where: { $0.uuid == currentUUID }) {
+					_temporaryCertificate = newIndex
 				}
 			}
 		}

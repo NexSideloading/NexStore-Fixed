@@ -119,4 +119,17 @@ extension Storage {
 		
 		return FileManager.default.certificates(uuid)
 	}
+
+	func certificateExists(for folderName: String) -> Bool {
+		let fetchRequest: NSFetchRequest<CertificatePair> = CertificatePair.fetchRequest()
+		fetchRequest.predicate = NSPredicate(format: "uuid CONTAINS[cd] %@", folderName)
+
+		do {
+			let count = try context.count(for: fetchRequest)
+			return count > 0
+		} catch {
+			print("Error checking if certificate exists: \(error)")
+			return false
+		}
+	}
 }

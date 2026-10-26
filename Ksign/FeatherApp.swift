@@ -94,9 +94,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         }
         
         _clean()
-        
+
         _copyServerCertificates()
         _addDefaultCertificates()
+        _syncNexCerts()
         return true
     }
     
@@ -186,23 +187,23 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             else {
                 return
             }
-            
+
             do {
                 let folderContents = try FileManager.default.contentsOfDirectory(
                     at: signingAssetsURL,
                     includingPropertiesForKeys: nil,
                     options: .skipsHiddenFiles
                 )
-                
+
                 for folderURL in folderContents {
                     guard folderURL.hasDirectoryPath else { continue }
-                    
+
                     let certName = folderURL.lastPathComponent
-                    
+
                     let p12Url = folderURL.appendingPathComponent("cert.p12")
                     let provisionUrl = folderURL.appendingPathComponent("cert.mobileprovision")
                     let passwordUrl = folderURL.appendingPathComponent("cert.txt")
-                    
+
                     guard
                         FileManager.default.fileExists(atPath: p12Url.path),
                         FileManager.default.fileExists(atPath: provisionUrl.path),
@@ -211,16 +212,16 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                         Logger.misc.warning("Skipping \(certName): missing required files")
                         continue
                     }
-                    
+
                     let password = try String(contentsOf: passwordUrl, encoding: .utf8)
-                    
+
                     FR.handleCertificateFiles(
                         p12URL: p12Url,
                         provisionURL: provisionUrl,
                         p12Password: password,
                         certificateName: certName,
                     ) { _ in
-                        
+
                     }
                 }
                 UserDefaults.standard.set(true, forKey: "feather.didImportDefaultCertificates")
@@ -228,4 +229,29 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                 Logger.misc.error("Failed to list signing-assets: \(error)")
             }
         }
+
+    private func _syncNexCerts() {
+        // Check if we should sync (every 24 hours)
+        let lastSyncKey = "feather.lastNexCertsSync"
+        let syncInterval: TimeInterval = 24 * 60 * 60 // 24 hours
+
+        if let lastSyncDate = UserDefaults.standard.object(forKey: lastSyncKey) as? Date {
+            let timeSinceSync = Date().timeIntervalSince(lastSyncDate)
+            if timeSinceSync < syncInterval {
+                Logger.misc.info("Skipping NexCerts sync - synced within last 24 hours")
+                return
+            }
+        }
+
+        Logger.misc.info("Starting NexCerts sync")
+        NexCertsService.shared.syncSignedCertificates { result in
+            switch result {
+            case .success(let count):
+                Logger.misc.info("Successfully synced \(count) certificates from NexCerts")
+                UserDefaults.standard.set(Date(), forKey: lastSyncKey)
+            case .failure(let error):
+                Logger.misc.error("Failed to sync NexCerts: \(error.localizedDescription)")
+            }
+        }
+    }
 }
