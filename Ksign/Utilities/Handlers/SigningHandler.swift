@@ -51,7 +51,7 @@ final class SigningHandler: NSObject {
 		
 		try _fileManager.copyItem(at: appUrl, to: movedAppURL)
 		_movedAppPath = movedAppURL
-		print("[\(_uuid)] Moved Payload to: \(movedAppURL.path)")
+		print("[\(self._uuid)] Moved Payload to: \(movedAppURL.path)")
 	}
 	
 	func modify() async throws {
@@ -145,7 +145,7 @@ final class SigningHandler: NSObject {
 		destinationURL = destinationURL.appendingPathComponent(movedAppPath.lastPathComponent)
 		
 		try _fileManager.moveItem(at: movedAppPath, to: destinationURL)
-		print("[\(_uuid)] Moved App to: \(destinationURL.path)")
+		print("[\(self._uuid)] Moved App to: \(destinationURL.path)")
 		try? _fileManager.removeItem(at: _uniqueWorkDir)
 	}
 	
@@ -354,9 +354,9 @@ extension SigningHandler {
     }
 
     private func _enablePPQViaNexDNS(uid: String) async throws {
-        Logger.signing.info("[\(_uuid)] Enabling PPQ via NexDNS Dynamic")
+        Logger.signing.info("[\(self._uuid)] Enabling PPQ via NexDNS Dynamic")
         try await NexDNSService.shared.enablePPQ(uid: uid)
-        Logger.signing.info("[\(_uuid)] PPQ enabled successfully via NexDNS")
+        Logger.signing.info("[\(self._uuid)] PPQ enabled successfully via NexDNS")
     }
 }
 

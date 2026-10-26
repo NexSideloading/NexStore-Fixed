@@ -38,7 +38,7 @@ struct SettingsView: View {
         // Check mobileprovision expiry if available
         if let provisionFile = Storage.shared.getFile(.provision, from: cert),
            let provision = Storage.shared.getProvisionFileDecoded(for: cert) {
-            let provisionExpiry = provision.expirationDate ?? Date.distantFuture
+            let provisionExpiry = provision.ExpirationDate ?? Date.distantFuture
             earliestExpiry = min(earliestExpiry, provisionExpiry)
         }
 
@@ -95,7 +95,7 @@ struct SettingsView: View {
 						}
 					}
 				}
-				.onChange(of: _certificates.count) { _, _ in
+				.onChange(of: _certificates.count) { _ in
 					// Update the selected index when certificates change
 					if _storedSelectedCert >= 0 && _storedSelectedCert < _certificates.count {
 						let currentUUID = _certificates[_storedSelectedCert].uuid

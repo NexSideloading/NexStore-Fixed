@@ -37,7 +37,7 @@ struct NexDNSOnboardingView: View {
 
 				Section {
 					Toggle("Use NexDNS Dynamic", isOn: $isUsingNexDNS)
-						.onChange(of: isUsingNexDNS) { _, newValue in
+						.onChange(of: isUsingNexDNS) { newValue in
 							if !newValue {
 								nexDNSUID = ""
 							}

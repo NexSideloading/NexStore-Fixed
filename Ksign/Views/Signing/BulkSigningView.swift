@@ -44,7 +44,7 @@ struct BulkSigningView: View {
 		// Check mobileprovision expiry if available
 		if let provisionFile = Storage.shared.getFile(.provision, from: cert),
 		   let provision = Storage.shared.getProvisionFileDecoded(for: cert) {
-			let provisionExpiry = provision.expirationDate ?? Date.distantFuture
+			let provisionExpiry = provision.ExpirationDate ?? Date.distantFuture
 			earliestExpiry = min(earliestExpiry, provisionExpiry)
 		}
 
