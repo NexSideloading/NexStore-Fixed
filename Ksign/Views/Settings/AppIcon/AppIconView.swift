@@ -29,10 +29,6 @@ struct AppIconView: View {
             iconName: "AppIcon",
             alternateIconName: nil
         ),
-        
-        AppIconOption(id: "kana_peek", title: "Peek", subtitle: "Kana", iconName: "kana_peek", alternateIconName: "kana_peek"),
-        AppIconOption(id: "kana_love", title: "Love", subtitle: "Kana", iconName: "kana_love", alternateIconName: "kana_love"),
-        AppIconOption(id: "kana_ded", title: "Skull", subtitle: "Kana", iconName: "kana_ded", alternateIconName: "kana_ded"),
     ]
     
     // MARK: Body

@@ -49,7 +49,9 @@ struct AboutNyaView: View {
             .listRowBackground(EmptyView())
 			
 			NBSection(.localized("Credits")) {
-				_credit(name: "Nyasami", desc: "Developer", github: "nyasami")
+				_credit(name: "NovaDev404", desc: "NexStore Developer (Based on Ksign)", github: "novadev404")
+				_credit(name: "Nyasami", desc: "Ksign Developer (Based on Feather)", github: "nyasami")
+				_credit(name: "CLARATION", desc: "Feather Developer", github: "claration")
 			}
 			
 			NBSection("Special thanks!") {
@@ -58,7 +60,7 @@ struct AboutNyaView: View {
 						.foregroundStyle(.secondary)
 						.padding(.vertical, 2)
 				}
-				.transition(.slide)
+				.transition(.slide()
 			}
             
             NBSection("Acknowledgements") {

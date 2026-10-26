@@ -19,7 +19,7 @@ struct CertificatesCellView: View {
 		VStack(spacing: 6) {
 			
 			NBTitleWithSubtitleView(
-				title: cert.nickname ?? data?.Name ?? .localized("Unknown"),
+				title: data?.TeamName ?? cert.nickname ?? .localized("Unknown"),
 				subtitle: data?.AppIDName ?? .localized("Unknown")
 			)
 			

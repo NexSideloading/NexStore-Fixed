@@ -1,0 +1,173 @@
+//
+//  CertificateCheckerService.swift
+//  NexStore
+//
+//  Created by NovaDev404 on 10/26/2026.
+//
+
+import Foundation
+
+// MARK: - Models
+struct CertificateCheckerResponse: Codable {
+    let p12: P12Info?
+    let mobileprovision: MobileProvisionInfo?
+}
+
+struct P12Info: Codable {
+    let CertificateType: String?
+    let CommonName: String?
+    let Organization: String?
+    let SerialNumber: String?
+    let TeamID: String?
+    let Status: String?
+    let ValidFrom: String?
+    let ValidTo: String?
+    let MD5: String?
+    let SHA1: String?
+    let SHA256: String?
+    let ocsp_url: String?
+}
+
+struct MobileProvisionInfo: Codable {
+    let TeamName: String?
+    let Name: String?
+    let AppIDName: String?
+    let UUID: String?
+    let TimeToLive: Int?
+    let ValidFrom: String?
+    let ValidTo: String?
+    let Platforms: [String]?
+    let Entitlements: [String: AnyCodable]?
+    let ProvisionsAllDevices: Bool?
+}
+
+// MARK: - Service
+class CertificateCheckerService {
+    static let shared = CertificateCheckerService()
+    private let baseURL = "https://sideloading.net/api/certchecker/checkCert"
+
+    private init() {}
+
+    func checkCertificate(
+        p12URL: URL,
+        password: String,
+        mobileprovisionURL: URL? = nil,
+        completion: @escaping (Result<CertificateCheckerResponse, Error>) -> Void
+    ) {
+        var request = URLRequest(url: URL(string: baseURL)!)
+        request.httpMethod = "POST"
+
+        var boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+
+        // Add p12 file
+        if let p12Data = try? Data(contentsOf: p12URL) {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"p12\"; filename=\"certificate.p12\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: application/x-pkcs12\r\n\r\n".data(using: .utf8)!)
+            body.append(p12Data)
+            body.append("\r\n".data(using: .utf8)!)
+        }
+
+        // Add password
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"password\"\r\n\r\n".data(using: .utf8)!)
+        body.append(password.data(using: .utf8)!)
+        body.append("\r\n".data(using: .utf8)!)
+
+        // Add mobileprovision file if provided
+        if let mobileURL = mobileprovisionURL, let mobileData = try? Data(contentsOf: mobileURL) {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"mobileprovision\"; filename=\"profile.mobileprovision\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: application/x-apple-aspen-mobileprovision\r\n\r\n".data(using: .utf8)!)
+            body.append(mobileData)
+            body.append("\r\n".data(using: .utf8)!)
+        }
+
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+                return
+            }
+
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(NSError(domain: "CertificateChecker", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                }
+                return
+            }
+
+            do {
+                let decoder = JSONDecoder()
+                let result = try decoder.decode(CertificateCheckerResponse.self, from: data)
+                DispatchQueue.main.async {
+                    completion(.success(result))
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+
+    func checkMobileProvisionOnly(
+        mobileprovisionURL: URL,
+        completion: @escaping (Result<CertificateCheckerResponse, Error>) -> Void
+    ) {
+        var request = URLRequest(url: URL(string: baseURL)!)
+        request.httpMethod = "POST"
+
+        var boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+
+        // Add mobileprovision file
+        if let mobileData = try? Data(contentsOf: mobileprovisionURL) {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"mobileprovision\"; filename=\"profile.mobileprovision\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: application/x-apple-aspen-mobileprovision\r\n\r\n".data(using: .utf8)!)
+            body.append(mobileData)
+            body.append("\r\n".data(using: .utf8)!)
+        }
+
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+                return
+            }
+
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(.failure(NSError(domain: "CertificateChecker", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                }
+                return
+            }
+
+            do {
+                let decoder = JSONDecoder()
+                let result = try decoder.decode(CertificateCheckerResponse.self, from: data)
+                DispatchQueue.main.async {
+                    completion(.success(result))
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+}

@@ -7,7 +7,6 @@
 
 import CoreData
 import UIKit.UIImpactFeedbackGenerator
-import ZsignSwift
 
 // MARK: - Class extension: certificate
 extension Storage {
@@ -36,17 +35,43 @@ extension Storage {
     
     func revokagedCertificate(for cert: CertificatePair) {
         guard !cert.revoked else { return }
-		print("Checking revokage for \(cert.nickname ?? "Unknown")")
-        Zsign.checkRevokage(
-            provisionPath: Storage.shared.getFile(.provision, from: cert)?.path ?? "",
-            p12Path: Storage.shared.getFile(.certificate, from: cert)?.path ?? "",
-            p12Password: cert.password ?? ""
-        ) { (status, _, _) in
-            if status == 1 {
-                DispatchQueue.main.async {
-                    cert.revoked = true
-                    Storage.shared.saveContext()
+        print("Checking revokage for \(cert.nickname ?? "Unknown")")
+
+        guard let p12URL = getFile(.certificate, from: cert),
+              let password = cert.password else {
+            print("Cannot check revokage: missing p12 file or password")
+            return
+        }
+
+        let mobileprovisionURL = getFile(.provision, from: cert)
+
+        CertificateCheckerService.shared.checkCertificate(
+            p12URL: p12URL,
+            password: password,
+            mobileprovisionURL: mobileprovisionURL
+        ) { result in
+            switch result {
+            case .success(let response):
+                if let p12Info = response.p12, let status = p12Info.Status {
+                    DispatchQueue.main.async {
+                        // Map API status to revoked boolean
+                        // API returns: "Signed" -> Valid (revoked = false)
+                        //              "Revoked" -> Revoked (revoked = true)
+                        //              Other -> Unknown (revoked = false, but could add unknown status field)
+                        switch status.lowercased() {
+                        case "signed":
+                            cert.revoked = false
+                        case "revoked":
+                            cert.revoked = true
+                        default:
+                            // Unknown status - treat as valid for now
+                            cert.revoked = false
+                        }
+                        Storage.shared.saveContext()
+                    }
                 }
+            case .failure(let error):
+                print("Failed to check certificate status: \(error.localizedDescription)")
             }
         }
     }
