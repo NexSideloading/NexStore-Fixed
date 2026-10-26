@@ -19,6 +19,7 @@ struct FeatherApp: App {
     @StateObject var extractManager = ExtractManager.shared
 	@StateObject var logsManager = LogsManager.shared
 	let storage = Storage.shared
+	@State private var showNexDNSOnboarding = !UserDefaults.standard.bool(forKey: "hasCompletedNexDNSOnboarding")
 
 	var body: some Scene {
 		WindowGroup {
@@ -40,6 +41,9 @@ struct FeatherApp: App {
 			.onAppear {
 				accentColorManager.updateGlobalTintColor()
 				if logsManager.isCapturing { logsManager.startCapture() }
+			}
+			.sheet(isPresented: $showNexDNSOnboarding) {
+				NexDNSOnboardingView()
 			}
 		}
 	}

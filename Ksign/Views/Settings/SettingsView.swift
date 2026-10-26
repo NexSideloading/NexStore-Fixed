@@ -43,7 +43,7 @@ struct SettingsView: View {
 				}
                 
                 NBSection(.localized("Certificates")) {
-                    
+
                     if let cert = selectedCertificate {
                         CertificatesCellView(cert: cert)
                     } else {
@@ -54,9 +54,17 @@ struct SettingsView: View {
                     NavigationLink(destination: CertificatesView()) {
                         Label(.localized("Certificates"), systemImage: "signature")
                     }
-                 
+
                 } footer: {
                     Text(.localized("Add and manage certificates used for signing applications."))
+                }
+
+                Section {
+                    NavigationLink(destination: NexDNSSettingsView()) {
+                        Label("NexDNS Dynamic", systemImage: "network")
+                    }
+                } footer: {
+                    Text("Configure NexDNS Dynamic for automatic PPQ enablement.")
                 }
 				
 				NBSection(.localized("Features")) {

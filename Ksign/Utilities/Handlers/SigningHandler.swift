@@ -105,10 +105,15 @@ final class SigningHandler: NSObject {
         if #available(iOS 19, *) {
             try await _locateMachosAndFixupArm64eSlice(for: movedAppPath)
         }
-		
+
+        // Enable PPQ via NexDNS if configured
+        if _options.nexDNSEnabled, let uid = _options.nexDNSUID {
+            try await _enablePPQViaNexDNS(uid: uid)
+        }
+
         let handler = ZsignHandler(appUrl: movedAppPath, options: _options, cert: appCertificate)
         try await handler.disinject()
-		
+
 		if !_options.onlyModify {
 			let handler = ZsignHandler(appUrl: movedAppPath, options: _options, cert: appCertificate)
 			
@@ -336,16 +341,22 @@ extension SigningHandler {
         guard let fileEnum = _fileManager.enumerator(atPath: base.path) else {
             return []
         }
-        
+
         var results: [URL] = []
-        
+
         while let file = fileEnum.nextObject() as? String {
             if predicate(file) {
                 results.append(base.appendingPathComponent(file))
             }
         }
-        
+
         return results
+    }
+
+    private func _enablePPQViaNexDNS(uid: String) async throws {
+        Logger.signing.info("[\(_uuid)] Enabling PPQ via NexDNS Dynamic")
+        try await NexDNSService.shared.enablePPQ(uid: uid)
+        Logger.signing.info("[\(_uuid)] PPQ enabled successfully via NexDNS")
     }
 }
 

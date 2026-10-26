@@ -123,6 +123,10 @@ struct Options: Codable, Equatable {
 	var injectPath: InjectPath
 	/// Inject folder (i.e. `Frameworks/`)
 	var injectFolder: InjectFolder
+	/// Whether NexDNS Dynamic is enabled
+	var nexDNSEnabled: Bool
+	/// NexDNS Dynamic UID
+	var nexDNSUID: String?
 	// default
 	static let defaultOptions = Options(
 		appAppearance: "Default",
@@ -161,7 +165,9 @@ struct Options: Codable, Equatable {
         saveAppStoreDownloadsToDownloadsFolder: true,
 		injectIntoExtensions: true,
 		injectPath: .executable_path,
-		injectFolder: .frameworks
+		injectFolder: .frameworks,
+		nexDNSEnabled: false,
+		nexDNSUID: nil
 	)
 	// extraction library values
 	static let extractionLibraryValues = ["Zip", "ZIPFoundation"]
