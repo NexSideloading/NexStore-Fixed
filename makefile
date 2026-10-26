@@ -5,6 +5,7 @@ APP_NAME := NexStore
 TMP := $(TMPDIR)/$(NAME)
 STAGE := $(TMP)/stage
 APP := $(TMP)/Build/Products/Release-$(PLATFORM)
+XCBEAUTIFY := $(shell command -v xcbeautify 2>/dev/null)
 
 .PHONY: all clean deps $(SCHEMES)
 
@@ -29,16 +30,29 @@ deps:
 	echo "local.sideloading.net" > deps/commonName.txt
 
 $(SCHEMES): deps
-	xcodebuild \
-	    -project Ksign.xcodeproj \
-	    -scheme "$@" \
-	    -configuration Release \
-	    -arch arm64 \
-	    -sdk $(PLATFORM) \
-	    -derivedDataPath $(TMP) \
-	    -skipPackagePluginValidation \
-	    CODE_SIGNING_ALLOWED=NO \
-	    ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=NO
+	@if [ -n "$(XCBEAUTIFY)" ]; then \
+		xcodebuild \
+		    -project Ksign.xcodeproj \
+		    -scheme "$@" \
+		    -configuration Release \
+		    -arch arm64 \
+		    -sdk $(PLATFORM) \
+		    -derivedDataPath $(TMP) \
+		    -skipPackagePluginValidation \
+		    CODE_SIGNING_ALLOWED=NO \
+		    ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=NO | xcbeautify; \
+	else \
+		xcodebuild \
+		    -project Ksign.xcodeproj \
+		    -scheme "$@" \
+		    -configuration Release \
+		    -arch arm64 \
+		    -sdk $(PLATFORM) \
+		    -derivedDataPath $(TMP) \
+		    -skipPackagePluginValidation \
+		    CODE_SIGNING_ALLOWED=NO \
+		    ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=NO; \
+	fi
 
 	rm -rf Payload
 	rm -rf "$(STAGE)/"
