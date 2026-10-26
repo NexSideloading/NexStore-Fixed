@@ -23,6 +23,10 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - name: Install xcbeautify
+        run: |
+          brew install xcbeautify
+
       - name: Build
         run: |
           make
