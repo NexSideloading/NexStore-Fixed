@@ -1,6 +1,7 @@
 NAME := Ksign
 PLATFORM := iphoneos
 SCHEMES := Ksign
+APP_NAME := NexStore
 TMP := $(TMPDIR)/$(NAME)
 STAGE := $(TMP)/stage
 APP := $(TMP)/Build/Products/Release-$(PLATFORM)
@@ -43,15 +44,15 @@ $(SCHEMES): deps
 	rm -rf "$(STAGE)/"
 	mkdir -p "$(STAGE)/Payload"
 
-	mv "$(APP)/$@.app" "$(STAGE)/Payload/$@.app"
+	mv "$(APP)/$(APP_NAME).app" "$(STAGE)/Payload/$(APP_NAME).app"
 
-	chmod -R 0755 "$(STAGE)/Payload/$@.app"
-	codesign --force --sign - --timestamp=none "$(STAGE)/Payload/$@.app"
+	chmod -R 0755 "$(STAGE)/Payload/$(APP_NAME).app"
+	codesign --force --sign - --timestamp=none "$(STAGE)/Payload/$(APP_NAME).app"
 
-	cp deps/* "$(STAGE)/Payload/$@.app/"
+	cp deps/* "$(STAGE)/Payload/$(APP_NAME).app/"
 
-	rm -rf "$(STAGE)/Payload/$@.app/_CodeSignature"
+	rm -rf "$(STAGE)/Payload/$(APP_NAME).app/_CodeSignature"
 	ln -sf "$(STAGE)/Payload" Payload
-	
+
 	mkdir -p packages
 	zip -r9 "packages/NexStore.ipa" Payload
