@@ -20,8 +20,10 @@ struct AboutNyaView: View {
 		NBList(.localized("About")) {
             Section {
                 VStack {
-                    Image(uiImage: (UIImage(named: Bundle.main.iconFileName ?? ""))! )
-                        .appIconStyle(size: 72)
+                    if let iconImage = UIImage(named: Bundle.main.iconFileName ?? "") {
+                        Image(uiImage: iconImage)
+                            .appIconStyle(size: 72)
+                    }
                     
                     Text(Bundle.main.exec)
                         .font(.largeTitle)
@@ -55,12 +57,9 @@ struct AboutNyaView: View {
 			}
 			
 			NBSection("Special thanks!") {
-				Group {
-					Text(.localized("This couldn't have been done without the original Feather devs! ❤️"))
-						.foregroundStyle(.secondary)
-						.padding(.vertical, 2)
-				}
-				.transition(.slide()
+				Text(.localized("This couldn't have been done without the original Ksign & Feather devs!"))
+					.foregroundStyle(.secondary)
+					.padding(.vertical, 2)
 			}
             
             NBSection("Acknowledgements") {

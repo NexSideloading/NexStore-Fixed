@@ -6,12 +6,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
     name: Build Beta
     runs-on: macos-26
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout Code
@@ -19,14 +21,42 @@ jobs:
         with:
           fetch-depth: 0
           submodules: recursive
+          persist-credentials: false
 
       - name: Build
         run: |
           make
 
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: NexStore-ipa
+          path: packages/NexStore.ipa
+          retention-days: 1
+
+  release:
+    name: Update Beta Release
+    runs-on: macos-26
+    needs: build
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download IPA
+        uses: actions/download-artifact@v4
+        with:
+          name: NexStore-ipa
+          path: packages
+
       - name: Update Beta Release
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           LATEST_OFFICIAL_TAG=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null || true)
 
@@ -38,21 +68,25 @@ jobs:
           COMMIT_MSG=$(git log -1 --pretty=%B)
           echo "## Commit: \`$COMMIT_MSG\` (${{ github.sha }})" >> release_notes.md
           echo "### New in this NexStore build (Compared to $LATEST_OFFICIAL_TAG):" >> release_notes.md
-            
-          CHANGES=$(git log --pretty=format:"* %s (%h)" ${LATEST_OFFICIAL_TAG}..HEAD)
-            
+
+          if [ -z "$LATEST_OFFICIAL_TAG" ]; then
+            CHANGES=$(git log --pretty=format:"* %s (%h)" HEAD)
+          else
+            CHANGES=$(git log --pretty=format:"* %s (%h)" ${LATEST_OFFICIAL_TAG}..HEAD)
+          fi
+
           if [ -z "$CHANGES" ]; then
             echo "* No code changes since $LATEST_OFFICIAL_TAG" >> release_notes.md
           else
             echo "$CHANGES" >> release_notes.md
           fi
-          
+
           echo "### Commit SHA: ${{ github.sha }}" >> release_notes.md
-          
+
           cat release_notes.md
 
           gh release delete beta --cleanup-tag -y || true
-          
+
           gh release create beta "packages/NexStore.ipa" \
             --title "Latest Beta Build" \
             --notes "$(cat release_notes.md)" \

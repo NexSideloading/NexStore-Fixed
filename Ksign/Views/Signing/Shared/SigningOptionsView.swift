@@ -22,13 +22,6 @@ struct SigningOptionsView: View {
                         isOn: $options.ppqProtection,
                         temporaryValue: temporaryOptions?.ppqProtection
                 )
-                #warning("add dynamic protect (itunes api)")
-//                _toggle("Dynamic Protection",
-//                        systemImage: "shield.lefthalf.filled",
-//                        isOn: $options.dynamicProtection,
-//                        temporaryValue: temporaryOptions?.dynamicProtection
-//                )
-//                    .disabled(!options.ppqProtection)
             } footer: {
                 Text(.localized("Enabling any protection will append a random string to the bundleidentifiers of the apps you sign, this is to ensure your Apple ID does not get flagged by Apple. However, when using a signing service you can ignore this."))
             }
@@ -219,11 +212,7 @@ struct SigningOptionsView: View {
     ) -> some View {
         Toggle(isOn: isOn) {
             Label {
-                if let tempValue = temporaryValue, tempValue != isOn.wrappedValue {
-                    Text(title)
-                } else {
-                    Text(title)
-                }
+                Text(title)
             } icon: {
                 Image(systemName: systemImage)
             }
