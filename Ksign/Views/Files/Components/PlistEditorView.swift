@@ -459,7 +459,7 @@ class PlistEditorViewModel: ObservableObject {
             if var nestedDict = dict[firstKey] as? [String: Any] {
                 _updateNestedDictionary(&nestedDict, keyPath: remainingPath, value: value)
                 dict[firstKey] = nestedDict
-            } else if var nestedArray = dict[firstKey] as? [Any], let arrayIndex = Int(remainingPath[0]) {
+            } else if var nestedArray = dict[firstKey] as? [Any], let _ = Int(remainingPath[0]) {
                 _updateNestedArray(&nestedArray, keyPath: remainingPath, value: value)
                 dict[firstKey] = nestedArray
             }

@@ -32,25 +32,24 @@ struct CertificatesView: View {
 			}
 
 			// Within the same revoked status, sort by expiry date (latest first)
-			// Use the earlier of P12 and mobileprovision expiry dates
-		 let expiry1 = _getEarliestExpiry(for: cert1)
-		 let expiry2 = _getEarliestExpiry(for: cert2)
+			// Use the later of P12 and mobileprovision expiry dates
+		 let expiry1 = _getLatestExpiry(for: cert1)
+		 let expiry2 = _getLatestExpiry(for: cert2)
 
 			return expiry1 > expiry2
 		}
 	}
 
-	private func _getEarliestExpiry(for cert: CertificatePair) -> Date {
-		var earliestExpiry = cert.expiration ?? Date.distantFuture
+	private func _getLatestExpiry(for cert: CertificatePair) -> Date {
+		var latestExpiry = cert.expiration ?? Date.distantPast
 
 		// Check mobileprovision expiry if available
-		if let provisionFile = Storage.shared.getFile(.provision, from: cert),
-		   let provision = Storage.shared.getProvisionFileDecoded(for: cert) {
-			let provisionExpiry = provision.ExpirationDate ?? Date.distantFuture
-			earliestExpiry = min(earliestExpiry, provisionExpiry)
+		if let provision = Storage.shared.getProvisionFileDecoded(for: cert) {
+			let provisionExpiry = provision.ExpirationDate
+			latestExpiry = max(latestExpiry, provisionExpiry)
 		}
 
-		return earliestExpiry
+		return latestExpiry
 	}
 
 	//

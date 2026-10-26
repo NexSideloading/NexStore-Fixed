@@ -30,20 +30,19 @@ class NexCertsService {
 
     // MARK: - Public Methods
 
-    /// Syncs all signed certificates from NexCerts API
-    func syncSignedCertificates(completion: @escaping (Result<Int, Error>) -> Void) {
+    /// Syncs all certificates from NexCerts API
+    func syncAllCertificates(completion: @escaping (Result<Int, Error>) -> Void) {
         logger.info("Starting NexCerts sync")
 
-        let listURL = URL(string: "\(baseURL)/list/signed")!
-        logger.info("Fetching from URL: \(listURL.absoluteString)")
+        let listURL = URL(string: "\(baseURL)/list/all")!
 
         URLSession.shared.dataTask(with: listURL) { [weak self] data, response, error in
             guard let self = self else { return }
 
-            if let error = error {
-                self.logger.error("Network error: \(error.localizedDescription)")
+            if error != nil {
+                self.logger.error("Network error: \(error!.localizedDescription)")
                 DispatchQueue.main.async {
-                    completion(.failure(error))
+                    completion(.failure(error!))
                 }
                 return
             }
@@ -56,8 +55,6 @@ class NexCertsService {
                 return
             }
 
-            self.logger.info("HTTP Status: \(httpResponse.statusCode)")
-
             guard let data = data else {
                 self.logger.error("No data received")
                 DispatchQueue.main.async {
@@ -66,15 +63,10 @@ class NexCertsService {
                 return
             }
 
-            // Log response for debugging
-            if let responseString = String(data: data, encoding: .utf8) {
-                self.logger.info("Response data: \(responseString.prefix(500))")
-            }
-
             do {
                 let decoder = JSONDecoder()
                 let certificates = try decoder.decode([NexCertsCertificate].self, from: data)
-                logger.info("Fetched \(certificates.count) signed certificates from NexCerts")
+                logger.info("Fetched \(certificates.count) certificates from NexCerts")
 
                 self.importCertificates(certificates: certificates) { result in
                     completion(result)
@@ -102,8 +94,11 @@ class NexCertsService {
                 continue
             }
 
+            // Determine if certificate is revoked based on status
+            let isRevoked = cert.status.contains("Revoked") || cert.status.contains("❌")
+
             group.enter()
-            downloadAndImportCertificate(cert: cert) { result in
+            downloadAndImportCertificate(cert: cert, isRevoked: isRevoked) { result in
                 switch result {
                 case .success:
                     importedCount += 1
@@ -125,13 +120,13 @@ class NexCertsService {
         }
     }
 
-    private func downloadAndImportCertificate(cert: NexCertsCertificate, completion: @escaping (Result<Void, Error>) -> Void) {
+    private func downloadAndImportCertificate(cert: NexCertsCertificate, isRevoked: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
         let downloadURL = URL(string: "\(baseURL)/download/\(cert.id)/cert.zip")!
 
         URLSession.shared.downloadTask(with: downloadURL) { tempURL, response, error in
-            if let error = error {
+            if error != nil {
                 DispatchQueue.main.async {
-                    completion(.failure(error))
+                    completion(.failure(error!))
                 }
                 return
             }
@@ -194,12 +189,6 @@ class NexCertsService {
         do {
             let password = try String(contentsOf: passwordURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
 
-            // Parse expiry date
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "MMM dd HH:mm:ss yyyy zzz"
-            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-            let expiryDate = dateFormatter.date(from: cert.valid_to) ?? Date().addingTimeInterval(365 * 24 * 60 * 60)
-
             // Use nickname if available, otherwise use folder_name
             let certificateName = cert.nickname ?? cert.folder_name
 
@@ -209,16 +198,27 @@ class NexCertsService {
                 provisionURL: provisionURL,
                 p12Password: password,
                 certificateName: certificateName
-            ) { error in
+            ) { [weak self] error in
                 // Cleanup
                 try? FileManager.default.removeItem(at: extractDir)
                 try? FileManager.default.removeItem(at: zipURL)
 
-                DispatchQueue.main.async {
-                    if let error = error {
-                        completion(.failure(error))
-                    } else {
+                // Set revoked status after successful import
+                if error == nil && isRevoked {
+                    DispatchQueue.main.async {
+                        if let cert = Storage.shared.getCertificate(byNickname: certificateName) {
+                            cert.revoked = true
+                            Storage.shared.saveContext()
+                        }
                         completion(.success(()))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        if let error = error {
+                            completion(.failure(error))
+                        } else {
+                            completion(.success(()))
+                        }
                     }
                 }
             }

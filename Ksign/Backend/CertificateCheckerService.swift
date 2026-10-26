@@ -57,7 +57,7 @@ class CertificateCheckerService {
         var request = URLRequest(url: URL(string: baseURL)!)
         request.httpMethod = "POST"
 
-        var boundary = UUID().uuidString
+        let boundary = UUID().uuidString
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
         var body = Data()
@@ -90,9 +90,9 @@ class CertificateCheckerService {
         request.httpBody = body
 
         URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
+            if error != nil {
                 DispatchQueue.main.async {
-                    completion(.failure(error))
+                    completion(.failure(error!))
                 }
                 return
             }
@@ -125,7 +125,7 @@ class CertificateCheckerService {
         var request = URLRequest(url: URL(string: baseURL)!)
         request.httpMethod = "POST"
 
-        var boundary = UUID().uuidString
+        let boundary = UUID().uuidString
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
         var body = Data()
@@ -143,9 +143,9 @@ class CertificateCheckerService {
         request.httpBody = body
 
         URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
+            if error != nil {
                 DispatchQueue.main.async {
-                    completion(.failure(error))
+                    completion(.failure(error!))
                 }
                 return
             }

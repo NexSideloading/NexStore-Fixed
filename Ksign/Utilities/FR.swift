@@ -160,8 +160,8 @@ enum FR {
 		competion: @escaping () -> Void
 	) {
 		guard let url = URL(string: urlString) else { return }
-		
-		NBFetchService().fetch<ASRepository>(from: url) { (result: Result<ASRepository, Error>) in
+
+		NBFetchService().fetch(from: url) { (result: Result<ASRepository, Error>) in
 			switch result {
 			case .success(let data):
 				let id = data.id ?? url.absoluteString

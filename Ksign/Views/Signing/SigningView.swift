@@ -54,9 +54,8 @@ struct SigningView: View {
 		var earliestExpiry = cert.expiration ?? Date.distantFuture
 
 		// Check mobileprovision expiry if available
-		if let provisionFile = Storage.shared.getFile(.provision, from: cert),
-		   let provision = Storage.shared.getProvisionFileDecoded(for: cert) {
-			let provisionExpiry = provision.ExpirationDate ?? Date.distantFuture
+		if let provision = Storage.shared.getProvisionFileDecoded(for: cert) {
+			let provisionExpiry = provision.ExpirationDate
 			earliestExpiry = min(earliestExpiry, provisionExpiry)
 		}
 

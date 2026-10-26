@@ -174,12 +174,11 @@ extension DownloadManager: URLSessionDownloadDelegate {
 				let generator = UINotificationFeedbackGenerator()
 				generator.notificationOccurred(.error)
 				print("Package handling error: \(error.localizedDescription)")
-				if let nsError = error as? NSError {
-					if nsError.domain == NSPOSIXErrorDomain && nsError.code == 28 {
-						print("No space left on device")
-					} else if nsError.domain == NSCocoaErrorDomain {
-						print("Cocoa error: \(nsError.localizedDescription)")
-					}
+				let nsError = error as NSError
+				if nsError.domain == NSPOSIXErrorDomain && nsError.code == 28 {
+					print("No space left on device")
+				} else if nsError.domain == NSCocoaErrorDomain {
+					print("Cocoa error: \(nsError.localizedDescription)")
 				}
 				let errorString = String(describing: error)
 				if errorString.contains("notEnoughDiskSpace") {

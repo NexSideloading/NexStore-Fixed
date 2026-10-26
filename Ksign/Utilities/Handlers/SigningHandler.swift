@@ -355,7 +355,7 @@ extension SigningHandler {
 
     private func _enablePPQViaNexDNS(uid: String) async throws {
         Logger.signing.info("[\(self._uuid)] Enabling PPQ via NexDNS Dynamic")
-        try await NexDNSService.shared.enablePPQ(uid: uid)
+        _ = try await NexDNSService.shared.enablePPQ(uid: uid)
         Logger.signing.info("[\(self._uuid)] PPQ enabled successfully via NexDNS")
     }
 }

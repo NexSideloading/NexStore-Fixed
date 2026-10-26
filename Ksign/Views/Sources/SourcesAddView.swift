@@ -108,7 +108,7 @@ struct SourcesAddView: View {
 					group.addTask {
 						await withCheckedContinuation { continuation in
 							Task { @MainActor in
-								dataService.fetch<ASRepository>(from: url) { (result: RepositoryDataHandler) in
+								dataService.fetch(from: url) { (result: RepositoryDataHandler) in
 									switch result {
 									case .success(let data):
 										Task {

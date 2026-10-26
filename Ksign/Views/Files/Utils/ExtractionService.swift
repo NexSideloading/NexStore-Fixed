@@ -166,7 +166,7 @@ class ExtractionService {
             default:
                 let parent = destinationPath.deletingLastPathComponent()
                 try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
-                try archive.extract(entry, to: destinationPath)
+                _ = try archive.extract(entry, to: destinationPath)
             }
         }
     }

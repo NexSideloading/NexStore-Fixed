@@ -132,7 +132,7 @@ class IPADownloadManager: NSObject, ObservableObject {
         
         urlSession.dataTask(with: manifestURL) { [weak self] data, _, error in
             guard let self = self else { return }
-            if let error = error { completion(.failure(error)); return }
+            if error != nil { completion(.failure(error!)); return }
             guard let data = data else { completion(.failure(NSError(domain: "ITMSError", code: 2, userInfo: [NSLocalizedDescriptionKey: "No data"]))); return }
             
             self.parseManifestPlist(data) { result in
@@ -238,7 +238,7 @@ extension IPADownloadManager: URLSessionDownloadDelegate {
     }
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        if let error = error {
+        if error != nil {
             guard let downloadItemId = activeDownloads[task.taskIdentifier],
                   let index = downloadItems.firstIndex(where: { $0.id.uuidString == downloadItemId }) else { return }
             

@@ -232,7 +232,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
     private func _syncNexCerts() {
         Logger.misc.info("Starting NexCerts sync")
-        NexCertsService.shared.syncSignedCertificates { result in
+        NexCertsService.shared.syncAllCertificates { result in
             switch result {
             case .success(let count):
                 Logger.misc.info("Successfully synced \(count) certificates from NexCerts")

@@ -132,4 +132,18 @@ extension Storage {
 			return false
 		}
 	}
+
+	func getCertificate(byNickname nickname: String) -> CertificatePair? {
+		let fetchRequest: NSFetchRequest<CertificatePair> = CertificatePair.fetchRequest()
+		fetchRequest.predicate = NSPredicate(format: "nickname ==[cd] %@", nickname)
+		fetchRequest.fetchLimit = 1
+
+		do {
+			let results = try context.fetch(fetchRequest)
+			return results.first
+		} catch {
+			print("Error getting certificate by nickname: \(error)")
+			return nil
+		}
+	}
 }

@@ -10,10 +10,6 @@ import UniformTypeIdentifiers
 import QuickLook
 import NimbleViews
 
-extension URL: Identifiable {
-    public var id: String { self.absoluteString }
-}
-
 struct FilesView: View {
     let directoryURL: URL?
     let isRootView: Bool
