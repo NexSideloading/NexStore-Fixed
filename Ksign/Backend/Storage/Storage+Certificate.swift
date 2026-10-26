@@ -122,7 +122,7 @@ extension Storage {
 
 	func certificateExists(for folderName: String) -> Bool {
 		let fetchRequest: NSFetchRequest<CertificatePair> = CertificatePair.fetchRequest()
-		fetchRequest.predicate = NSPredicate(format: "uuid CONTAINS[cd] %@", folderName)
+		fetchRequest.predicate = NSPredicate(format: "nickname ==[cd] %@", folderName)
 
 		do {
 			let count = try context.count(for: fetchRequest)

@@ -35,22 +35,40 @@ class NexCertsService {
         logger.info("Starting NexCerts sync")
 
         let listURL = URL(string: "\(baseURL)/list/signed")!
+        logger.info("Fetching from URL: \(listURL.absoluteString)")
 
         URLSession.shared.dataTask(with: listURL) { [weak self] data, response, error in
             guard let self = self else { return }
 
             if let error = error {
+                self.logger.error("Network error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     completion(.failure(error))
                 }
                 return
             }
 
+            guard let httpResponse = response as? HTTPURLResponse else {
+                self.logger.error("Invalid response")
+                DispatchQueue.main.async {
+                    completion(.failure(NSError(domain: "NexCerts", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])))
+                }
+                return
+            }
+
+            self.logger.info("HTTP Status: \(httpResponse.statusCode)")
+
             guard let data = data else {
+                self.logger.error("No data received")
                 DispatchQueue.main.async {
                     completion(.failure(NSError(domain: "NexCerts", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
                 }
                 return
+            }
+
+            // Log response for debugging
+            if let responseString = String(data: data, encoding: .utf8) {
+                self.logger.info("Response data: \(responseString.prefix(500))")
             }
 
             do {

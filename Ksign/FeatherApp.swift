@@ -231,24 +231,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         }
 
     private func _syncNexCerts() {
-        // Check if we should sync (every 24 hours)
-        let lastSyncKey = "feather.lastNexCertsSync"
-        let syncInterval: TimeInterval = 24 * 60 * 60 // 24 hours
-
-        if let lastSyncDate = UserDefaults.standard.object(forKey: lastSyncKey) as? Date {
-            let timeSinceSync = Date().timeIntervalSince(lastSyncDate)
-            if timeSinceSync < syncInterval {
-                Logger.misc.info("Skipping NexCerts sync - synced within last 24 hours")
-                return
-            }
-        }
-
         Logger.misc.info("Starting NexCerts sync")
         NexCertsService.shared.syncSignedCertificates { result in
             switch result {
             case .success(let count):
                 Logger.misc.info("Successfully synced \(count) certificates from NexCerts")
-                UserDefaults.standard.set(Date(), forKey: lastSyncKey)
             case .failure(let error):
                 Logger.misc.error("Failed to sync NexCerts: \(error.localizedDescription)")
             }
