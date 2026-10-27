@@ -11,26 +11,26 @@ struct FileRow: View {
     let file: FileItem
     let isSelected: Bool
     @ObservedObject var viewModel: FilesViewModel
-    @Binding var plistFileURL: URL?
-    @Binding var hexEditorFileURL: URL?
-    @Binding var quickLookFileURL: URL?
-    @Binding var textEditorFileURL: URL?
+    @Binding var plistFileURL: FileItemURL?
+    @Binding var hexEditorFileURL: FileItemURL?
+    @Binding var quickLookFileURL: FileItemURL?
+    @Binding var textEditorFileURL: FileItemURL?
     @Binding var shareItems: [Any]
     @Binding var moveFileItem: FileItem?
-    
+
     let onExtractArchive: (FileItem) -> Void
     let onPackageApp: (FileItem) -> Void
     let onImportIpa: (FileItem) -> Void
     let onNavigateToDirectory: ((URL) -> Void)?
-    
+
     init(
-        file: FileItem, 
-        isSelected: Bool, 
+        file: FileItem,
+        isSelected: Bool,
         viewModel: FilesViewModel,
-        plistFileURL: Binding<URL?>,
-        hexEditorFileURL: Binding<URL?>,
-        textEditorFileURL: Binding<URL?>,
-        quickLookFileURL: Binding<URL?>,
+        plistFileURL: Binding<FileItemURL?>,
+        hexEditorFileURL: Binding<FileItemURL?>,
+        textEditorFileURL: Binding<FileItemURL?>,
+        quickLookFileURL: Binding<FileItemURL?>,
         shareItems: Binding<[Any]>,
         moveFileItem: Binding<FileItem?>,
         onExtractArchive: @escaping (FileItem) -> Void,
@@ -166,7 +166,7 @@ struct FileRow: View {
     private func fileConfirmationDialogButtons() -> some View {
         if !file.isDirectory {
             Button {
-                quickLookFileURL = file.url
+                quickLookFileURL = FileItemURL(url: file.url)
             } label: {
                 Label(String(localized: "Preview"), systemImage: "eye")
             }
@@ -174,7 +174,7 @@ struct FileRow: View {
         
         if file.isTextFile {
             Button {
-                textEditorFileURL = file.url
+                textEditorFileURL = FileItemURL(url: file.url)
             } label: {
                 Label(String(localized: "Text Editor"), systemImage: "doc.plaintext")
             }
@@ -182,15 +182,15 @@ struct FileRow: View {
         
         if file.isPlistFile {
             Button {
-                plistFileURL = file.url
+                plistFileURL = FileItemURL(url: file.url)
             } label: {
                 Label(String(localized: "Plist Editor"), systemImage: "list.bullet")
             }
         }
-        
+
         if !file.isDirectory {
             Button {
-                hexEditorFileURL = file.url
+                hexEditorFileURL = FileItemURL(url: file.url)
             } label: {
                 Label(String(localized: "Hex Editor"), systemImage: "doc.text")
             }

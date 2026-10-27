@@ -97,8 +97,8 @@ final class CertificateService {
             p12Password: password,
             certificateName: p12File.name.replacingOccurrences(of: ".p12", with: "")
         ) { error in
-            if let error = error {
-                completion(.failure(.importFailed(error.localizedDescription)))
+            if error != nil {
+                completion(.failure(.importFailed(error!.localizedDescription)))
             } else {
                 completion(.success("Certificate imported successfully"))
             }

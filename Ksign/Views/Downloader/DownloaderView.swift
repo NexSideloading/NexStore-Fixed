@@ -13,9 +13,9 @@ import UIKit
 struct DownloaderView: View {
     @StateObject private var downloadManager = IPADownloadManager()
     @StateObject private var libraryManager = DownloadManager.shared
-    
+
     @State private var selectedItem: DownloadItem?
-    @State private var webViewURL: URL?
+    @State private var webViewURL: FileItemURL?
     @State private var shareItems: [Any] = []
     @State private var showDocumentPicker = false
     @State private var fileToExport: URL?
@@ -96,8 +96,8 @@ struct DownloaderView: View {
             .onChange(of: downloadManager.activeItems.count) { _ in
                 downloadManager.loadDownloadedIPAs()
             }
-            .fullScreenCover(item: $webViewURL) { url in
-                webViewSheet(url: url)
+            .fullScreenCover(item: $webViewURL) { item in
+                webViewSheet(url: item.url)
             }
             .sheet(isPresented: $showDocumentPicker) {
                 documentPickerSheet
@@ -202,7 +202,7 @@ Enter the URL of the website containing the IPA file (Direct install/ITMS Servic
             }
         } else {
             print("validUrl: \(validUrl)")
-            webViewURL = validUrl
+            webViewURL = FileItemURL(url: validUrl)
         }
     }
     

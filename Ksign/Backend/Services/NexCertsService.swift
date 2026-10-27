@@ -32,25 +32,15 @@ class NexCertsService {
 
     /// Syncs all certificates from NexCerts API
     func syncAllCertificates(completion: @escaping (Result<Int, Error>) -> Void) {
-        logger.info("Starting NexCerts sync")
-
         let listURL = URL(string: "\(baseURL)/list/all")!
 
-        URLSession.shared.dataTask(with: listURL) { [weak self] data, response, error in
+        URLSession.shared.dataTask(with: listURL) { [weak self] data, _, error in
             guard let self = self else { return }
 
             if error != nil {
                 self.logger.error("Network error: \(error!.localizedDescription)")
                 DispatchQueue.main.async {
                     completion(.failure(error!))
-                }
-                return
-            }
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                self.logger.error("Invalid response")
-                DispatchQueue.main.async {
-                    completion(.failure(NSError(domain: "NexCerts", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])))
                 }
                 return
             }
@@ -66,7 +56,6 @@ class NexCertsService {
             do {
                 let decoder = JSONDecoder()
                 let certificates = try decoder.decode([NexCertsCertificate].self, from: data)
-                logger.info("Fetched \(certificates.count) certificates from NexCerts")
 
                 self.importCertificates(certificates: certificates) { result in
                     completion(result)
@@ -142,12 +131,13 @@ class NexCertsService {
             self.processCertificateZip(
                 cert: cert,
                 zipURL: tempURL,
+                isRevoked: isRevoked,
                 completion: completion
             )
         }.resume()
     }
 
-    private func processCertificateZip(cert: NexCertsCertificate, zipURL: URL, completion: @escaping (Result<Void, Error>) -> Void) {
+    private func processCertificateZip(cert: NexCertsCertificate, zipURL: URL, isRevoked: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
         let tempDir = FileManager.default.temporaryDirectory
         let extractDir = tempDir.appendingPathComponent("nexcerts_\(cert.id)")
 

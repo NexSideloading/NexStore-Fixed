@@ -10,6 +10,11 @@ import UniformTypeIdentifiers
 import QuickLook
 import NimbleViews
 
+struct FileItemURL: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
 struct FilesView: View {
     let directoryURL: URL?
     let isRootView: Bool
@@ -21,10 +26,10 @@ struct FilesView: View {
 
     @AppStorage("Feather.useLastExportLocation") private var _useLastExportLocation: Bool = false
 
-    @State private var plistFileURL: URL?
-    @State private var hexEditorFileURL: URL?
-    @State private var textEditorFileURL: URL?
-    @State private var quickLookFileURL: URL?
+    @State private var plistFileURL: FileItemURL?
+    @State private var hexEditorFileURL: FileItemURL?
+    @State private var textEditorFileURL: FileItemURL?
+    @State private var quickLookFileURL: FileItemURL?
     @State private var moveSingleFile: FileItem?
     @State private var shareItems: [Any] = []
     @State private var navigateToDirectoryURL: URL?
@@ -148,21 +153,21 @@ struct FilesView: View {
             )
         }
 
-        .fullScreenCover(item: $plistFileURL) { fileURL in
-            PlistEditorView(fileURL: fileURL)
-                .compatNavigationTransition(id: fileURL.absoluteString, ns: _namespace)
+        .fullScreenCover(item: $plistFileURL) { item in
+            PlistEditorView(fileURL: item.url)
+                .compatNavigationTransition(id: item.url.absoluteString, ns: _namespace)
         }
-        .fullScreenCover(item: $hexEditorFileURL) { fileURL in
-            HexEditorView(fileURL: fileURL)
-                .compatNavigationTransition(id: fileURL.absoluteString, ns: _namespace)
+        .fullScreenCover(item: $hexEditorFileURL) { item in
+            HexEditorView(fileURL: item.url)
+                .compatNavigationTransition(id: item.url.absoluteString, ns: _namespace)
         }
-        .fullScreenCover(item: $textEditorFileURL) { fileURL in
-            TextEditorView(fileURL: fileURL)
-                .compatNavigationTransition(id: fileURL.absoluteString, ns: _namespace)
+        .fullScreenCover(item: $textEditorFileURL) { item in
+            TextEditorView(fileURL: item.url)
+                .compatNavigationTransition(id: item.url.absoluteString, ns: _namespace)
         }
-        .fullScreenCover(item: $quickLookFileURL) { fileURL in
-            QuickLookPreview(fileURL: fileURL)
-                .compatNavigationTransition(id: fileURL.absoluteString, ns: _namespace)
+        .fullScreenCover(item: $quickLookFileURL) { item in
+            QuickLookPreview(fileURL: item.url)
+                .compatNavigationTransition(id: item.url.absoluteString, ns: _namespace)
         }
     }
     

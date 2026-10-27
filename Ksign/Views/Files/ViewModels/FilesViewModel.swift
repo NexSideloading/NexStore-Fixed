@@ -197,7 +197,7 @@ class FilesViewModel: ObservableObject {
         case .failure(let err):
             DispatchQueue.main.async { UIAlertController.showAlertWithOk(title: .localized("Error"), message: .localized(err.errorDescription ?? "Unknown error")) }
         case .success(let provisionFile):
-            CertificateService.shared.importP12Certificate(p12File: file, provisionFile: provisionFile, password: "") { [weak self] result in
+            CertificateService.shared.importP12Certificate(p12File: file, provisionFile: provisionFile, password: "") { result in
                 DispatchQueue.main.async {
                     switch result {
                     case .success(let message):

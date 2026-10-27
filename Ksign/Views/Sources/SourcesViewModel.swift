@@ -76,7 +76,7 @@ final class SourcesViewModel: ObservableObject {
 
 			await MainActor.run {
 				for source in batch {
-					let sourceID = source.uuid ?? source.identifier ?? ""
+					let sourceID = source.identifier ?? ""
 					if let repo = batchResults[sourceID] {
 						self.sources[source] = repo
 					}
