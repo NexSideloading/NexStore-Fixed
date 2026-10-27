@@ -41,7 +41,10 @@ $(SCHEMES): deps
 		    -skipPackagePluginValidation \
 		    CODE_SIGNING_ALLOWED=NO \
 		    ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=NO | xcbeautify; \
-		exit $$?; \
+		BUILD_STATUS=$$?; \
+		if [ $$BUILD_STATUS -ne 0 ]; then \
+			exit $$BUILD_STATUS; \
+		fi; \
 	else \
 		xcodebuild \
 		    -project Ksign.xcodeproj \
@@ -53,7 +56,10 @@ $(SCHEMES): deps
 		    -skipPackagePluginValidation \
 		    CODE_SIGNING_ALLOWED=NO \
 		    ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=NO; \
-		exit $$?; \
+		BUILD_STATUS=$$?; \
+		if [ $$BUILD_STATUS -ne 0 ]; then \
+			exit $$BUILD_STATUS; \
+		fi; \
 	fi
 
 	rm -rf Payload

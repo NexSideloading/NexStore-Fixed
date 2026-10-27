@@ -44,7 +44,7 @@ final class SourcesViewModel: ObservableObject {
 
 			let batchResults = await withTaskGroup(of: (String, ASRepository?).self, returning: [String: ASRepository].self) { group in
 				for source in batch {
-					let sourceID = source.uuid ?? source.identifier ?? ""
+					let sourceID = source.identifier ?? ""
 					let sourceURL = source.sourceURL
 
 					group.addTask {

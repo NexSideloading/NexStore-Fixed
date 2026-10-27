@@ -188,7 +188,7 @@ class NexCertsService {
                 provisionURL: provisionURL,
                 p12Password: password,
                 certificateName: certificateName
-            ) { [weak self] error in
+            ) { error in
                 // Cleanup
                 try? FileManager.default.removeItem(at: extractDir)
                 try? FileManager.default.removeItem(at: zipURL)

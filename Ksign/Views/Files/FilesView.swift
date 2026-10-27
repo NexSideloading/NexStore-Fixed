@@ -422,9 +422,8 @@ struct FilesView: View {
         let download = self.downloadManager.startArchive(from: file.url, id: id)
         downloadManager.handlePachageFile(url: file.url, dl: download) { err in
             DispatchQueue.main.async {
-                if let error = err {
+                if err != nil {
                     UIAlertController.showAlertWithOk(title: .localized("Error"), message: .localized("Whoops!, something went wrong when extracting the file. \nMaybe try switching the extraction library in the settings?"))
-                } else {
                 }
                 if let index = DownloadManager.shared.getDownloadIndex(by: download.id) {
                     DownloadManager.shared.downloads.remove(at: index)

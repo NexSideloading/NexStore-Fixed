@@ -215,7 +215,7 @@ struct LibraryView: View {
 							let id = "FeatherManualDownload_\(UUID().uuidString)"
 							let dl = downloadManager.startArchive(from: ipas, id: id)
 							downloadManager.handlePachageFile(url: ipas, dl: dl) { err in
-								if let error = err {
+								if err != nil {
 									UIAlertController.showAlertWithOk(title: "Error", message: .localized("Whoops!, something went wrong when extracting the file. \nMaybe try switching the extraction library in the settings?"))
 								}
 							}
