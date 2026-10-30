@@ -489,7 +489,7 @@
 					"$(PROJECT_DIR)/Ksign/Resources/idevice",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.6.1;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = nexsideloading.nexstore;
 				PRODUCT_NAME = NexStore;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -555,7 +555,7 @@
 					"$(PROJECT_DIR)/Ksign/Resources/idevice",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.6.1;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = nexsideloading.nexstore;
 				PRODUCT_NAME = NexStore;
 				PROVISIONING_PROFILE_SPECIFIER = "";
