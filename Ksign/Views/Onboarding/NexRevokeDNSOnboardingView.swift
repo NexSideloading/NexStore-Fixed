@@ -1,5 +1,5 @@
 //
-//  NexDNSOnboardingView.swift
+//  NexRevokeDNSOnboardingView.swift
 //  NexStore
 //
 //  Created by NovaDev404 on 26.10.2026.
@@ -7,9 +7,9 @@
 
 import SwiftUI
 
-struct NexDNSOnboardingView: View {
-	@State private var isUsingNexDNS = false
-	@State private var nexDNSUID = ""
+struct NexRevokeDNSOnboardingView: View {
+	@State private var isUsingNexRevokeDNS = false
+	@State private var nexRevokeDNSUID = ""
 	@State private var showExplanation = false
 	@Environment(\.dismiss) private var dismiss
 	@ObservedObject private var optionsManager = OptionsManager.shared
@@ -19,11 +19,11 @@ struct NexDNSOnboardingView: View {
 			Form {
 				Section {
 					VStack(alignment: .leading, spacing: 12) {
-						Text("NexDNS Dynamic")
+						Text("NexRevokeDNS Dynamic")
 							.font(.title2)
 							.fontWeight(.bold)
 
-						Text("NexDNS Dynamic allows automatic PPQ enablement for signed apps through your Dynamic DNS UID.")
+						Text("NexRevokeDNS Dynamic allows automatic PPQ enablement for signed apps through your Dynamic DNS UID.")
 							.font(.subheadline)
 							.foregroundColor(.secondary)
 
@@ -36,23 +36,23 @@ struct NexDNSOnboardingView: View {
 				}
 
 				Section {
-					Toggle("Use NexDNS Dynamic", isOn: $isUsingNexDNS)
-						.onChange(of: isUsingNexDNS) { newValue in
+					Toggle("Use NexRevokeDNS Dynamic", isOn: $isUsingNexRevokeDNS)
+						.onChange(of: isUsingNexRevokeDNS) { newValue in
 							if !newValue {
-								nexDNSUID = ""
+								nexRevokeDNSUID = ""
 							}
 						}
 				} header: {
 					Text("Setup")
 				}
 
-				if isUsingNexDNS {
+				if isUsingNexRevokeDNS {
 					Section {
 						VStack(alignment: .leading, spacing: 8) {
-							Text("NexDNS Dynamic UID")
+							Text("NexRevokeDNS Dynamic UID")
 								.font(.headline)
 
-							TextField("Enter your UID", text: $nexDNSUID)
+							TextField("Enter your UID", text: $nexRevokeDNSUID)
 								.textFieldStyle(.roundedBorder)
 								.autocapitalization(.none)
 								.disableAutocorrection(true)
@@ -70,46 +70,45 @@ struct NexDNSOnboardingView: View {
 						saveAndDismiss()
 					}
 					.frame(maxWidth: .infinity)
-					.disabled(isUsingNexDNS && nexDNSUID.isEmpty)
+					.disabled(isUsingNexRevokeDNS && nexRevokeDNSUID.isEmpty)
 				}
 			}
-			.navigationTitle("Setup NexDNS")
+			.navigationTitle("Setup NexRevokeDNS")
 			.navigationBarTitleDisplayMode(.inline)
 			.sheet(isPresented: $showExplanation) {
-				NexDNSExplanationView()
+				NexRevokeDNSExplanationView()
 			}
 		}
 	}
 
 	private func saveAndDismiss() {
-		optionsManager.options.nexDNSEnabled = isUsingNexDNS
-		optionsManager.options.nexDNSUID = isUsingNexDNS ? nexDNSUID : nil
+		optionsManager.options.nexRevokeDNSEnabled = isUsingNexRevokeDNS
+		optionsManager.options.nexRevokeDNSUID = isUsingNexRevokeDNS ? nexRevokeDNSUID : nil
 		optionsManager.saveOptions()
-		UserDefaults.standard.set(true, forKey: "hasCompletedNexDNSOnboarding")
+		UserDefaults.standard.set(true, forKey: "hasCompletedNexRevokeDNSOnboarding")
 		dismiss()
 	}
 }
 
-struct NexDNSExplanationView: View {
+struct NexRevokeDNSExplanationView: View {
 	@Environment(\.dismiss) private var dismiss
 
 	var body: some View {
 		NavigationStack {
 			ScrollView {
 				VStack(alignment: .leading, spacing: 16) {
-					Text("What is NexDNS Dynamic?")
+					Text("What is NexRevokeDNS Dynamic?")
 						.font(.title2)
 						.fontWeight(.bold)
 
-					Text("NexDNS Dynamic is a service that automatically enables PPQ (Profile Qualification) for your signed apps. This helps prevent app revocation by Apple.")
+					Text("NexRevokeDNS Dynamic is a service that automatically enables PPQ (Provisioning Profile Query) for your signed apps. This helps prevent app revokes by Apple.")
 
 					VStack(alignment: .leading, spacing: 8) {
 						Text("How it works:")
 							.font(.headline)
-						Text("1. When you sign an app, NexStore will call the NexDNS API")
-						Text("2. Your UID is used to identify your account")
-						Text("3. PPQ is automatically enabled for your domain")
-						Text("4. The app waits 10 seconds before continuing")
+						Text("1. When you sign an app, NexStore will call the NexRevokeDNS API")
+						Text("2. Your UID is used to identify your personal DNS")
+						Text("3. PPQ is automatically enabled to let your app install")
 					}
 
 					VStack(alignment: .leading, spacing: 8) {
@@ -128,7 +127,7 @@ struct NexDNSExplanationView: View {
 				}
 				.padding()
 			}
-			.navigationTitle("About NexDNS")
+			.navigationTitle("About NexRevokeDNS")
 			.navigationBarTitleDisplayMode(.inline)
 		}
 	}

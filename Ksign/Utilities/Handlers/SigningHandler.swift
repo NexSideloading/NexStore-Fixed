@@ -106,9 +106,9 @@ final class SigningHandler: NSObject {
             try await _locateMachosAndFixupArm64eSlice(for: movedAppPath)
         }
 
-        // Enable PPQ via NexDNS if configured
-        if _options.nexDNSEnabled, let uid = _options.nexDNSUID {
-            try await _enablePPQViaNexDNS(uid: uid)
+        // Enable PPQ via NexRevokeDNS if configured
+        if _options.nexRevokeDNSEnabled, let uid = _options.nexRevokeDNSUID {
+            try await _enablePPQViaNexRevokeDNS(uid: uid)
         }
 
         let handler = ZsignHandler(appUrl: movedAppPath, options: _options, cert: appCertificate)
@@ -353,10 +353,10 @@ extension SigningHandler {
         return results
     }
 
-    private func _enablePPQViaNexDNS(uid: String) async throws {
-        Logger.signing.info("[\(self._uuid)] Enabling PPQ via NexDNS Dynamic")
-        _ = try await NexDNSService.shared.enablePPQ(uid: uid)
-        Logger.signing.info("[\(self._uuid)] PPQ enabled successfully via NexDNS")
+    private func _enablePPQViaNexRevokeDNS(uid: String) async throws {
+        Logger.signing.info("[\(self._uuid)] Enabling PPQ via NexRevokeDNS Dynamic")
+        _ = try await NexRevokeDNSService.shared.enablePPQ(uid: uid)
+        Logger.signing.info("[\(self._uuid)] PPQ enabled successfully via NexRevokeDNS")
     }
 }
 

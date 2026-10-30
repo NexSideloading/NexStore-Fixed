@@ -105,11 +105,11 @@ struct SettingsView: View {
 				}
 
                 Section {
-                    NavigationLink(destination: NexDNSSettingsView()) {
-                        Label("NexDNS Dynamic", systemImage: "network")
+                    NavigationLink(destination: NexRevokeDNSSettingsView()) {
+                        Label("NexRevokeDNS Dynamic", systemImage: "network")
                     }
                 } footer: {
-                    Text("Configure NexDNS Dynamic for automatic PPQ enablement.")
+                    Text("Configure NexRevokeDNS Dynamic for automatic PPQ enablement.")
                 }
 				
 				NBSection(.localized("Features")) {

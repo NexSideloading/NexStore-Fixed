@@ -1,5 +1,5 @@
 //
-//  NexDNSService.swift
+//  NexRevokeDNSService.swift
 //  NexStore
 //
 //  Created by NovaDev404 on 26.10.2026.
@@ -8,25 +8,25 @@
 import Foundation
 import OSLog
 
-class NexDNSService {
-	static let shared = NexDNSService()
-	private let logger = Logger(subsystem: "com.nexstore.feather", category: "NexDNS")
+class NexRevokeDNSService {
+	static let shared = NexRevokeDNSService()
+	private let logger = Logger(subsystem: "com.nexstore.feather", category: "NexRevokeDNS")
 
 	private init() {}
 
-	/// Enables PPQ for the given NexDNS Dynamic UID
-	/// - Parameter uid: The NexDNS Dynamic UID
+	/// Enables PPQ for the given NexRevokeDNS Dynamic UID
+	/// - Parameter uid: The NexRevokeDNS Dynamic UID
 	/// - Returns: Boolean indicating success or failure
 	func enablePPQ(uid: String) async throws -> Bool {
 		guard !uid.isEmpty else {
-			logger.error("NexDNS UID is empty")
-			throw NexDNSError.emptyUID
+			logger.error("NexRevokeDNS UID is empty")
+			throw NexRevokeDNSError.emptyUID
 		}
 
 		let urlString = "https://dns.sideloading.net/dynamic/\(uid)/allowPPQ"
 		guard let url = URL(string: urlString) else {
 			logger.error("Invalid URL constructed from UID")
-			throw NexDNSError.invalidURL
+			throw NexRevokeDNSError.invalidURL
 		}
 
 		logger.info("Enabling PPQ for UID: \(uid)")
@@ -39,11 +39,11 @@ class NexDNSService {
 			let (_, response) = try await URLSession.shared.data(for: request)
 
 			guard let httpResponse = response as? HTTPURLResponse else {
-				logger.error("Invalid response from NexDNS API")
-				throw NexDNSError.invalidResponse
+				logger.error("Invalid response from NexRevokeDNS API")
+				throw NexRevokeDNSError.invalidResponse
 			}
 
-			logger.info("NexDNS API returned status: \(httpResponse.statusCode)")
+			logger.info("NexRevokeDNS API returned status: \(httpResponse.statusCode)")
 
 			// Wait 10 seconds as required
 			logger.info("Waiting 10 seconds before continuing...")
@@ -57,7 +57,7 @@ class NexDNSService {
 	}
 }
 
-enum NexDNSError: Error, LocalizedError {
+enum NexRevokeDNSError: Error, LocalizedError {
 	case emptyUID
 	case invalidURL
 	case invalidResponse
@@ -66,11 +66,11 @@ enum NexDNSError: Error, LocalizedError {
 	var errorDescription: String? {
 		switch self {
 		case .emptyUID:
-			return "NexDNS UID cannot be empty"
+			return "NexRevokeDNS UID cannot be empty"
 		case .invalidURL:
-			return "Invalid NexDNS URL"
+			return "Invalid NexRevokeDNS URL"
 		case .invalidResponse:
-			return "Invalid response from NexDNS server"
+			return "Invalid response from NexRevokeDNS server"
 		case .networkError(let error):
 			return "Network error: \(error.localizedDescription)"
 		}

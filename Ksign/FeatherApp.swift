@@ -10,6 +10,16 @@ import Nuke
 import OSLog
 import IDeviceSwift
 
+private func _shouldShowNexRevokeDNSOnboarding() -> Bool {
+	let defaults = UserDefaults.standard
+	let key = "hasCompletedNexRevokeDNSOnboarding"
+	let previousKey = "hasCompletedNexDNSOnboarding"
+	if defaults.object(forKey: key) == nil, let previousValue = defaults.object(forKey: previousKey) {
+		defaults.set(previousValue, forKey: key)
+	}
+	return !defaults.bool(forKey: key)
+}
+
 @main
 struct FeatherApp: App {
 	@UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -19,7 +29,7 @@ struct FeatherApp: App {
     @StateObject var extractManager = ExtractManager.shared
 	@StateObject var logsManager = LogsManager.shared
 	let storage = Storage.shared
-	@State private var showNexDNSOnboarding = !UserDefaults.standard.bool(forKey: "hasCompletedNexDNSOnboarding")
+	@State private var showNexRevokeDNSOnboarding = _shouldShowNexRevokeDNSOnboarding()
 
 	var body: some Scene {
 		WindowGroup {
@@ -42,8 +52,8 @@ struct FeatherApp: App {
 				accentColorManager.updateGlobalTintColor()
 				if logsManager.isCapturing { logsManager.startCapture() }
 			}
-			.sheet(isPresented: $showNexDNSOnboarding) {
-				NexDNSOnboardingView()
+			.sheet(isPresented: $showNexRevokeDNSOnboarding) {
+				NexRevokeDNSOnboardingView()
 			}
 		}
 	}

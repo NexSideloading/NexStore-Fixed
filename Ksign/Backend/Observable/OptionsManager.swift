@@ -16,13 +16,32 @@ class OptionsManager: ObservableObject {
 	private let _key = "signing_options"
 	
 	init() {
-		if let data = UserDefaults.standard.data(forKey: _key),
-		   let savedOptions = try? JSONDecoder().decode(Options.self, from: data) {
+		if let storedData = UserDefaults.standard.data(forKey: _key),
+		   let data = _migrateNexDNSOptionKeys(in: storedData),
+	   let savedOptions = try? JSONDecoder().decode(Options.self, from: data) {
 			self.options = savedOptions
 		} else {
 			self.options = Options.defaultOptions
 			self.saveOptions()
 		}
+	}
+
+	private func _migrateNexDNSOptionKeys(in data: Data) -> Data? {
+		guard var values = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return data }
+		var changed = false
+		for (oldKey, newKey) in [
+			("nexDNSEnabled", "nexRevokeDNSEnabled"),
+			("nexDNSUID", "nexRevokeDNSUID")
+		] where values[newKey] == nil {
+			if let value = values.removeValue(forKey: oldKey) {
+				values[newKey] = value
+				changed = true
+			}
+		}
+		guard changed else { return data }
+		guard let migrated = try? JSONSerialization.data(withJSONObject: values) else { return data }
+		UserDefaults.standard.set(migrated, forKey: _key)
+		return migrated
 	}
 	
 	/// Saves options
@@ -123,10 +142,10 @@ struct Options: Codable, Equatable {
 	var injectPath: InjectPath
 	/// Inject folder (i.e. `Frameworks/`)
 	var injectFolder: InjectFolder
-	/// Whether NexDNS Dynamic is enabled
-	var nexDNSEnabled: Bool
-	/// NexDNS Dynamic UID
-	var nexDNSUID: String?
+	/// Whether NexRevokeDNS Dynamic is enabled
+	var nexRevokeDNSEnabled: Bool
+	/// NexRevokeDNS Dynamic UID
+	var nexRevokeDNSUID: String?
 	// default
 	static let defaultOptions = Options(
 		appAppearance: "Default",
@@ -166,8 +185,8 @@ struct Options: Codable, Equatable {
 		injectIntoExtensions: true,
 		injectPath: .executable_path,
 		injectFolder: .frameworks,
-		nexDNSEnabled: false,
-		nexDNSUID: nil
+		nexRevokeDNSEnabled: false,
+		nexRevokeDNSUID: nil
 	)
 	// extraction library values
 	static let extractionLibraryValues = ["Zip", "ZIPFoundation"]

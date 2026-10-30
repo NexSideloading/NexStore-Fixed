@@ -1,5 +1,5 @@
 //
-//  NexDNSSettingsView.swift
+//  NexRevokeDNSSettingsView.swift
 //  NexStore
 //
 //  Created by NovaDev404 on 26.10.2026.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct NexDNSSettingsView: View {
+struct NexRevokeDNSSettingsView: View {
 	@ObservedObject private var optionsManager = OptionsManager.shared
 	@State private var isEditingUID = false
 	@State private var tempUID = ""
@@ -15,28 +15,28 @@ struct NexDNSSettingsView: View {
 	var body: some View {
 		Form {
 			Section {
-				Toggle("Enable NexDNS Dynamic", isOn: Binding(
-					get: { optionsManager.options.nexDNSEnabled },
+				Toggle("Enable NexRevokeDNS Dynamic", isOn: Binding(
+					get: { optionsManager.options.nexRevokeDNSEnabled },
 					set: { newValue in
-						optionsManager.options.nexDNSEnabled = newValue
+						optionsManager.options.nexRevokeDNSEnabled = newValue
 						if !newValue {
-							optionsManager.options.nexDNSUID = nil
+							optionsManager.options.nexRevokeDNSUID = nil
 						}
 						optionsManager.saveOptions()
 					}
 				))
 			} header: {
-				Text("NexDNS Dynamic")
+				Text("NexRevokeDNS Dynamic")
 			} footer: {
-				Text("Automatically enable PPQ for signed apps using your NexDNS Dynamic UID.")
+				Text("Automatically enable PPQ for signed apps using your NexRevokeDNS Dynamic UID.")
 			}
 
-			if optionsManager.options.nexDNSEnabled {
+			if optionsManager.options.nexRevokeDNSEnabled {
 				Section {
 					HStack {
 						Text("UID")
 						Spacer()
-						if let uid = optionsManager.options.nexDNSUID {
+						if let uid = optionsManager.options.nexRevokeDNSUID {
 							Text(uid)
 								.foregroundColor(.secondary)
 						} else {
@@ -46,7 +46,7 @@ struct NexDNSSettingsView: View {
 					}
 
 					Button("Change UID") {
-						tempUID = optionsManager.options.nexDNSUID ?? ""
+						tempUID = optionsManager.options.nexRevokeDNSUID ?? ""
 						isEditingUID = true
 					}
 				} header: {
@@ -57,21 +57,21 @@ struct NexDNSSettingsView: View {
 			}
 
 			Section {
-				Button("Open NexDNS Settings") {
+				Button("Open NexRevokeDNS Settings") {
 					if let url = URL(string: "https://sideloading.net/dns/") {
 						UIApplication.open(url)
 					}
 				}
 			}
 		}
-		.navigationTitle("NexDNS")
+		.navigationTitle("NexRevokeDNS")
 		.navigationBarTitleDisplayMode(.inline)
 		.sheet(isPresented: $isEditingUID) {
 			NavigationStack {
 				Form {
 					Section {
 						VStack(alignment: .leading, spacing: 8) {
-							Text("NexDNS Dynamic UID")
+							Text("NexRevokeDNS Dynamic UID")
 								.font(.headline)
 
 							TextField("Enter your UID", text: $tempUID)
@@ -88,7 +88,7 @@ struct NexDNSSettingsView: View {
 
 					Section {
 						Button("Save") {
-							optionsManager.options.nexDNSUID = tempUID.isEmpty ? nil : tempUID
+							optionsManager.options.nexRevokeDNSUID = tempUID.isEmpty ? nil : tempUID
 							optionsManager.saveOptions()
 							isEditingUID = false
 						}
