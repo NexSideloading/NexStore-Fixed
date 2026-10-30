@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreData
 import AltSourceKit
 import SwiftUI
 import NimbleJSON
@@ -74,9 +75,15 @@ final class SourcesViewModel: ObservableObject {
 				return results
 			}
 
+			let batchSources = batch.map { ($0.objectID.uriRepresentation().absoluteString, $0.identifier ?? "") }
 			await MainActor.run {
-				for source in batch {
-					let sourceID = source.identifier ?? ""
+				for (objectURI, sourceID) in batchSources {
+					guard
+						let uri = URL(string: objectURI),
+						let objectID = Storage.shared.context.persistentStoreCoordinator?.managedObjectID(forURIRepresentation: uri),
+						let existing = try? Storage.shared.context.existingObject(with: objectID),
+						let source = existing as? AltSource
+					else { continue }
 					if let repo = batchResults[sourceID] {
 						self.sources[source] = repo
 					}

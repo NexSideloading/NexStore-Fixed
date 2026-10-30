@@ -13,12 +13,12 @@ class OptionsManager: ObservableObject {
 	static let shared = OptionsManager()
 	
 	@Published var options: Options
-	private let _key = "signing_options"
+	private static let _key = "signing_options"
 	
 	init() {
-		if let storedData = UserDefaults.standard.data(forKey: _key),
-		   let data = _migrateNexDNSOptionKeys(in: storedData),
-	   let savedOptions = try? JSONDecoder().decode(Options.self, from: data) {
+		if let storedData = UserDefaults.standard.data(forKey: Self._key),
+		   let data = Self._migrateNexDNSOptionKeys(in: storedData),
+		   let savedOptions = try? JSONDecoder().decode(Options.self, from: data) {
 			self.options = savedOptions
 		} else {
 			self.options = Options.defaultOptions
@@ -26,7 +26,7 @@ class OptionsManager: ObservableObject {
 		}
 	}
 
-	private func _migrateNexDNSOptionKeys(in data: Data) -> Data? {
+	private static func _migrateNexDNSOptionKeys(in data: Data) -> Data? {
 		guard var values = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return data }
 		var changed = false
 		for (oldKey, newKey) in [
@@ -47,7 +47,7 @@ class OptionsManager: ObservableObject {
 	/// Saves options
 	func saveOptions() {
 		if let encoded = try? JSONEncoder().encode(options) {
-			UserDefaults.standard.set(encoded, forKey: _key)
+			UserDefaults.standard.set(encoded, forKey: Self._key)
 			objectWillChange.send()
 		}
 	}
