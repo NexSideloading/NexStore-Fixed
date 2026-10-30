@@ -128,6 +128,10 @@ struct CertificatesView: View {
 			Button("Cancel", role: .cancel) { }
 		}
 		.onAppear {
+			for cert in certificates {
+				Storage.shared.revokagedCertificate(for: cert)
+			}
+
 			// Update the selected index to match the sorted order
 			if _selectedCertBinding.wrappedValue >= 0 && _selectedCertBinding.wrappedValue < certificates.count {
 				let currentUUID = certificates[_selectedCertBinding.wrappedValue].uuid

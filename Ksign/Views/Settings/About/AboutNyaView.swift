@@ -53,7 +53,7 @@ struct AboutNyaView: View {
 			NBSection(.localized("Credits")) {
 				_credit(name: "NovaDev404", desc: "NexStore Developer (Based on Ksign)", github: "novadev404")
 				_credit(name: "Nyasami", desc: "Ksign Developer (Based on Feather)", github: "nyasami")
-				_credit(name: "CLARATION", desc: "Feather Developer", github: "claration")
+				_credit(name: "Claration", desc: "Feather Developer", github: "claration")
 			}
 			
 			NBSection("Special thanks!") {
