@@ -1,221 +1,150 @@
-//
-//  NexCertsService.swift
-//  NexStore
-//
-//  Created by NovaDev404 on 26.10.2026.
-//
-
 import Foundation
-import OSLog
 import ZIPFoundation
 
-// MARK: - Models
-struct NexCertsCertificate: Codable {
-    let id: Int
-    let name: String
-    let status: String
-    let valid_from: String
-    let valid_to: String
-    let folder_name: String
-    let nickname: String?
+struct NexCertsCertificate: Decodable, Identifiable {
+	let id: Int
+	let name: String
+	let status: String
+	let valid_to: String
+	let folder_name: String
+	let nickname: String?
 }
 
-// MARK: - Service
-class NexCertsService {
-    static let shared = NexCertsService()
-    private let baseURL = "https://sideloading.net/api/certificates"
-    private let logger = Logger(subsystem: "com.nexstore", category: "NexCerts")
+final class NexCertsService {
+	static let shared = NexCertsService()
+	private let baseURL = URL(string: "https://sideloading.net/api/certificates")!
+	private let session = URLSession.shared
 
-    private init() {}
+	private init() {}
 
-    // MARK: - Public Methods
+	func fetchCertificates(completion: @escaping (Result<[NexCertsCertificate], Error>) -> Void) {
+		request(baseURL.appendingPathComponent("list/all")) { result in
+			DispatchQueue.main.async {
+				completion(result.flatMap { data in Result { try JSONDecoder().decode([NexCertsCertificate].self, from: data) } })
+			}
+		}
+	}
 
-    /// Syncs all certificates from NexCerts API
-    func syncAllCertificates(completion: @escaping (Result<Int, Error>) -> Void) {
-        let listURL = URL(string: "\(baseURL)/list/all")!
+	func importCertificate(_ certificate: NexCertsCertificate, completion: @escaping (Result<Void, Error>) -> Void) {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent("nexcerts-\(UUID().uuidString)", isDirectory: true)
+		do { try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true) }
+		catch { completion(.failure(error)); return }
 
-        URLSession.shared.dataTask(with: listURL) { [weak self] data, _, error in
-            guard let self = self else { return }
+		let group = DispatchGroup()
+		let lock = NSLock()
+		var files: [String: URL] = [:]
+		var firstError: Error?
+		for name in ["cert.p12", "cert.mobileprovision", "password.txt"] {
+			group.enter()
+			let url = baseURL.appendingPathComponent("download").appendingPathComponent(String(certificate.id)).appendingPathComponent(name)
+			request(url) { result in
+				lock.lock()
+				switch result {
+				case .success(let data):
+					let target = directory.appendingPathComponent(name)
+					do { try data.write(to: target, options: .atomic); files[name] = target }
+					catch { if firstError == nil { firstError = error } }
+				case .failure(let error): if firstError == nil { firstError = error }
+				}
+				lock.unlock()
+				group.leave()
+			}
+		}
+		group.notify(queue: .global()) {
+			if let error = firstError {
+				try? FileManager.default.removeItem(at: directory)
+				DispatchQueue.main.async { completion(.failure(error)) }
+				return
+			}
+			guard let p12 = files["cert.p12"], let provision = files["cert.mobileprovision"], let passwordFile = files["password.txt"],
+				let password = try? String(contentsOf: passwordFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines) else {
+				try? FileManager.default.removeItem(at: directory)
+				DispatchQueue.main.async { completion(.failure(Self.error("The certificate download is missing a required file."))) }
+				return
+			}
+			self.finishImport(p12: p12, provision: provision, password: password, name: certificate.nickname ?? certificate.folder_name, revoked: certificate.status.localizedCaseInsensitiveContains("revoked")) { result in
+				try? FileManager.default.removeItem(at: directory)
+				completion(result)
+			}
+		}
+	}
 
-            if error != nil {
-                self.logger.error("Network error: \(error!.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(error!))
-                }
-                return
-            }
+	func importAll(completion: @escaping (Result<Int, Error>) -> Void) {
+		request(baseURL.appendingPathComponent("download").appendingPathComponent("all.zip")) { [weak self] result in
+			guard let self else { return }
+			DispatchQueue.global().async {
+				switch result {
+				case .failure(let error): DispatchQueue.main.async { completion(.failure(error)) }
+				case .success(let data):
+					let root = FileManager.default.temporaryDirectory.appendingPathComponent("nexcerts-all-\(UUID().uuidString)", isDirectory: true)
+					do {
+						try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+						let archive = root.appendingPathComponent("all.zip")
+						try data.write(to: archive)
+						let extracted = root.appendingPathComponent("extracted", isDirectory: true)
+						try FileManager.default.createDirectory(at: extracted, withIntermediateDirectories: true)
+						try FileManager.default.unzipItem(at: archive, to: extracted)
+						let folders = try FileManager.default.contentsOfDirectory(at: extracted, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]).filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }
+						guard !folders.isEmpty else { throw Self.error("The archive contains no certificate folders.") }
+						let group = DispatchGroup()
+						let lock = NSLock()
+						var count = 0
+						var firstError: Error?
+						for folder in folders {
+							guard let p12 = Self.findFile(named: ".p12", in: folder), let provision = Self.findFile(named: ".mobileprovision", in: folder), let passwordFile = Self.findFile(named: "password.txt", in: folder),
+								let password = try? String(contentsOf: passwordFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines) else { continue }
+							group.enter()
+							self.finishImport(p12: p12, provision: provision, password: password, name: folder.lastPathComponent, revoked: false) { result in
+								lock.lock()
+								switch result { case .success: count += 1; case .failure(let error): if firstError == nil { firstError = error } }
+								lock.unlock()
+								group.leave()
+							}
+						}
+						group.notify(queue: .main) {
+							try? FileManager.default.removeItem(at: root)
+							if let error = firstError { completion(.failure(error)) }
+							else if count == 0 { completion(.failure(Self.error("No complete certificate folders were found in the archive."))) }
+							else { completion(.success(count)) }
+						}
+					} catch {
+						try? FileManager.default.removeItem(at: root)
+						DispatchQueue.main.async { completion(.failure(error)) }
+					}
+				}
+			}
+		}
+	}
 
-            guard let data = data else {
-                self.logger.error("No data received")
-                DispatchQueue.main.async {
-                    completion(.failure(NSError(domain: "NexCerts", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                }
-                return
-            }
+	private func finishImport(p12: URL, provision: URL, password: String, name: String, revoked: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
+		FR.handleCertificateFiles(p12URL: p12, provisionURL: provision, p12Password: password, certificateName: name) { error in
+			if let error { completion(.failure(error)); return }
+			if revoked, let imported = Storage.shared.getCertificate(byNickname: name) {
+				imported.revoked = true
+				Storage.shared.saveContext()
+			}
+			completion(.success(()))
+		}
+	}
 
-            do {
-                let decoder = JSONDecoder()
-                let certificates = try decoder.decode([NexCertsCertificate].self, from: data)
+	private func request(_ url: URL, completion: @escaping (Result<Data, Error>) -> Void) {
+		session.dataTask(with: url) { data, response, error in
+			if let error { completion(.failure(error)); return }
+			guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode), let data else {
+				completion(.failure(Self.error("The NexCerts server returned an invalid response.")))
+				return
+			}
+			completion(.success(data))
+		}.resume()
+	}
 
-                self.importCertificates(certificates: certificates) { result in
-                    completion(result)
-                }
-            } catch {
-                self.logger.error("Failed to decode NexCerts response: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(.failure(error))
-                }
-            }
-        }.resume()
-    }
+	private static func findFile(named suffix: String, in folder: URL) -> URL? {
+		guard let enumerator = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: nil) else { return nil }
+		for case let url as URL in enumerator where url.lastPathComponent.lowercased().hasSuffix(suffix.lowercased()) { return url }
+		return nil
+	}
 
-    // MARK: - Private Methods
-
-    private func importCertificates(certificates: [NexCertsCertificate], completion: @escaping (Result<Int, Error>) -> Void) {
-        let group = DispatchGroup()
-        var importedCount = 0
-        var lastError: Error?
-
-        for cert in certificates {
-            // Check if certificate already exists by checking if a certificate with the same folder name exists
-            if Storage.shared.certificateExists(for: cert.folder_name) {
-                logger.info("Certificate \(cert.folder_name) already exists, skipping")
-                continue
-            }
-
-            // Determine if certificate is revoked based on status
-            let isRevoked = cert.status.contains("Revoked") || cert.status.contains("❌")
-
-            group.enter()
-            downloadAndImportCertificate(cert: cert, isRevoked: isRevoked) { result in
-                switch result {
-                case .success:
-                    importedCount += 1
-                    self.logger.info("Successfully imported certificate: \(cert.folder_name)")
-                case .failure(let error):
-                    self.logger.error("Failed to import certificate \(cert.folder_name): \(error.localizedDescription)")
-                    lastError = error
-                }
-                group.leave()
-            }
-        }
-
-        group.notify(queue: .main) {
-            if let error = lastError {
-                completion(.failure(error))
-            } else {
-                completion(.success(importedCount))
-            }
-        }
-    }
-
-    private func downloadAndImportCertificate(cert: NexCertsCertificate, isRevoked: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
-        let downloadURL = URL(string: "\(baseURL)/download/\(cert.id)/cert.zip")!
-
-        URLSession.shared.downloadTask(with: downloadURL) { tempURL, response, error in
-            if error != nil {
-                DispatchQueue.main.async {
-                    completion(.failure(error!))
-                }
-                return
-            }
-
-            guard let tempURL = tempURL else {
-                DispatchQueue.main.async {
-                    completion(.failure(NSError(domain: "NexCerts", code: -1, userInfo: [NSLocalizedDescriptionKey: "No temporary file URL"])))
-                }
-                return
-            }
-
-            // Process the downloaded zip file
-            self.processCertificateZip(
-                cert: cert,
-                zipURL: tempURL,
-                isRevoked: isRevoked,
-                completion: completion
-            )
-        }.resume()
-    }
-
-    private func processCertificateZip(cert: NexCertsCertificate, zipURL: URL, isRevoked: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
-        let tempDir = FileManager.default.temporaryDirectory
-        let extractDir = tempDir.appendingPathComponent("nexcerts_\(cert.id)")
-
-        // Create extraction directory
-        do {
-            try FileManager.default.createDirectory(at: extractDir, withIntermediateDirectories: true)
-        } catch {
-            DispatchQueue.main.async {
-                completion(.failure(error))
-            }
-            return
-        }
-
-        // Extract zip
-        do {
-            try FileManager.default.unzipItem(at: zipURL, to: extractDir)
-        } catch {
-            DispatchQueue.main.async {
-                completion(.failure(NSError(domain: "NexCerts", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to extract zip file"])))
-            }
-            return
-        }
-
-        // Find required files
-        let p12URL = extractDir.appendingPathComponent("cert.p12")
-        let provisionURL = extractDir.appendingPathComponent("cert.mobileprovision")
-        let passwordURL = extractDir.appendingPathComponent("cert.txt")
-
-        guard FileManager.default.fileExists(atPath: p12URL.path),
-              FileManager.default.fileExists(atPath: provisionURL.path),
-              FileManager.default.fileExists(atPath: passwordURL.path) else {
-            DispatchQueue.main.async {
-                completion(.failure(NSError(domain: "NexCerts", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing required files in zip"])))
-            }
-            return
-        }
-
-        // Read password
-        do {
-            let password = try String(contentsOf: passwordURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
-
-            // Use nickname if available, otherwise use folder_name
-            let certificateName = cert.nickname ?? cert.folder_name
-
-            // Import using existing FR method
-            FR.handleCertificateFiles(
-                p12URL: p12URL,
-                provisionURL: provisionURL,
-                p12Password: password,
-                certificateName: certificateName
-            ) { error in
-                // Cleanup
-                try? FileManager.default.removeItem(at: extractDir)
-                try? FileManager.default.removeItem(at: zipURL)
-
-                // Set revoked status after successful import
-                if error == nil && isRevoked {
-                    DispatchQueue.main.async {
-                        if let cert = Storage.shared.getCertificate(byNickname: certificateName) {
-                            cert.revoked = true
-                            Storage.shared.saveContext()
-                        }
-                        completion(.success(()))
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        if let error = error {
-                            completion(.failure(error))
-                        } else {
-                            completion(.success(()))
-                        }
-                    }
-                }
-            }
-        } catch {
-            DispatchQueue.main.async {
-                completion(.failure(error))
-            }
-        }
-    }
+	private static func error(_ message: String) -> NSError {
+		NSError(domain: "NexCerts", code: -1, userInfo: [NSLocalizedDescriptionKey: message])
+	}
 }

@@ -14,6 +14,8 @@ struct CertificatesView: View {
 	@AppStorage("feather.selectedCert") private var _storedSelectedCert: Int = 0
 
 	@State private var _isAddingPresenting = false
+	@State private var _isImportOptionsPresenting = false
+	@State private var _isNexCertsPresenting = false
 	@State private var _isSelectedInfoPresenting: CertificatePair?
 
 	// MARK: Fetch
@@ -80,7 +82,7 @@ struct CertificatesView: View {
                         Text(.localized("Get started signing by importing your first certificate."))
                     } actions: {
                         Button {
-                            _isAddingPresenting = true
+							_isImportOptionsPresenting = true
                         } label: {
 							Text("Import").bg()
                         }
@@ -95,7 +97,7 @@ struct CertificatesView: View {
 					style: .icon,
 					placement: .topBarTrailing
 				) {
-					_isAddingPresenting = true
+					_isImportOptionsPresenting = true
 				}
 			}
 			if certificates.count > 0 {
@@ -117,6 +119,14 @@ struct CertificatesView: View {
 			CertificatesAddView()
 				.presentationDetents([.medium])
 		}
+		.sheet(isPresented: $_isNexCertsPresenting) {
+			NexCertsImportView()
+		}
+		.confirmationDialog("Add Certificate", isPresented: $_isImportOptionsPresenting, titleVisibility: .visible) {
+			Button("NexCerts") { _isNexCertsPresenting = true }
+			Button("Import Certificate Files") { _isAddingPresenting = true }
+			Button("Cancel", role: .cancel) { }
+		}
 		.onAppear {
 			// Update the selected index to match the sorted order
 			if _selectedCertBinding.wrappedValue >= 0 && _selectedCertBinding.wrappedValue < certificates.count {
@@ -125,6 +135,23 @@ struct CertificatesView: View {
 					_selectedCertBinding.wrappedValue = newIndex
 				}
 			}
+			if _bindingSelectedCert == nil && !UserDefaults.standard.bool(forKey: "feather.didShowNexCertsImport") {
+				UserDefaults.standard.set(true, forKey: "feather.didShowNexCertsImport")
+				_waitForDefaultCertificateImport()
+			}
+		}
+	}
+
+	private func _waitForDefaultCertificateImport(attempt: Int = 0) {
+		let defaults = UserDefaults.standard
+		guard defaults.bool(forKey: "feather.defaultCertificatesImportCompleted") || attempt >= 40 else {
+			DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+				_waitForDefaultCertificateImport(attempt: attempt + 1)
+			}
+			return
+		}
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+			if certificates.isEmpty { _isNexCertsPresenting = true }
 		}
 	}
 }

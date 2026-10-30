@@ -97,7 +97,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
         _copyServerCertificates()
         _addDefaultCertificates()
-        _syncNexCerts()
         return true
     }
     
@@ -181,64 +180,64 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
     
     private func _addDefaultCertificates() {
-            guard
-                UserDefaults.standard.bool(forKey: "feather.didImportDefaultCertificates") == false,
-                let signingAssetsURL = Bundle.main.url(forResource: "signing-assets", withExtension: nil)
-            else {
-                return
-            }
-
-            do {
-                let folderContents = try FileManager.default.contentsOfDirectory(
-                    at: signingAssetsURL,
-                    includingPropertiesForKeys: nil,
-                    options: .skipsHiddenFiles
-                )
-
-                for folderURL in folderContents {
-                    guard folderURL.hasDirectoryPath else { continue }
-
-                    let certName = folderURL.lastPathComponent
-
-                    let p12Url = folderURL.appendingPathComponent("cert.p12")
-                    let provisionUrl = folderURL.appendingPathComponent("cert.mobileprovision")
-                    let passwordUrl = folderURL.appendingPathComponent("cert.txt")
-
-                    guard
-                        FileManager.default.fileExists(atPath: p12Url.path),
-                        FileManager.default.fileExists(atPath: provisionUrl.path),
-                        FileManager.default.fileExists(atPath: passwordUrl.path)
-                    else {
-                        Logger.misc.warning("Skipping \(certName): missing required files")
-                        continue
-                    }
-
-                    let password = try String(contentsOf: passwordUrl, encoding: .utf8)
-
-                    FR.handleCertificateFiles(
-                        p12URL: p12Url,
-                        provisionURL: provisionUrl,
-                        p12Password: password,
-                        certificateName: certName,
-                    ) { _ in
-
-                    }
-                }
-                UserDefaults.standard.set(true, forKey: "feather.didImportDefaultCertificates")
-            } catch {
-                Logger.misc.error("Failed to list signing-assets: \(error)")
-            }
+        let defaults = UserDefaults.standard
+        let importCompletedKey = "feather.defaultCertificatesImportCompleted"
+        guard !defaults.bool(forKey: "feather.didImportDefaultCertificates") else {
+            defaults.set(true, forKey: importCompletedKey)
+            return
+        }
+        guard let signingAssetsURL = Bundle.main.url(forResource: "signing-assets", withExtension: nil) else {
+            defaults.set(true, forKey: importCompletedKey)
+            return
         }
 
-    private func _syncNexCerts() {
-        Logger.misc.info("Starting NexCerts sync")
-        NexCertsService.shared.syncAllCertificates { result in
-            switch result {
-            case .success(let count):
-                Logger.misc.info("Successfully synced \(count) certificates from NexCerts")
-            case .failure(let error):
-                Logger.misc.error("Failed to sync NexCerts: \(error.localizedDescription)")
+        do {
+            let folderContents = try FileManager.default.contentsOfDirectory(
+                at: signingAssetsURL,
+                includingPropertiesForKeys: nil,
+                options: .skipsHiddenFiles
+            )
+            let imports = DispatchGroup()
+
+            for folderURL in folderContents {
+                guard folderURL.hasDirectoryPath else { continue }
+
+                let certName = folderURL.lastPathComponent
+
+                let p12Url = folderURL.appendingPathComponent("cert.p12")
+                let provisionUrl = folderURL.appendingPathComponent("cert.mobileprovision")
+                let passwordUrl = folderURL.appendingPathComponent("cert.txt")
+
+                guard
+                    FileManager.default.fileExists(atPath: p12Url.path),
+                    FileManager.default.fileExists(atPath: provisionUrl.path),
+                    FileManager.default.fileExists(atPath: passwordUrl.path)
+                else {
+                    Logger.misc.warning("Skipping \(certName): missing required files")
+                    continue
+                }
+
+                guard let password = try? String(contentsOf: passwordUrl, encoding: .utf8) else {
+                    Logger.misc.warning("Skipping \(certName): failed to read password file")
+                    continue
+                }
+
+                imports.enter()
+                FR.handleCertificateFiles(
+                    p12URL: p12Url,
+                    provisionURL: provisionUrl,
+                    p12Password: password,
+                    certificateName: certName
+                ) { _ in imports.leave() }
             }
+            defaults.set(true, forKey: "feather.didImportDefaultCertificates")
+            imports.notify(queue: .main) {
+                defaults.set(true, forKey: importCompletedKey)
+            }
+        } catch {
+            defaults.set(true, forKey: importCompletedKey)
+            Logger.misc.error("Failed to list signing-assets: \(error)")
         }
     }
+
 }
