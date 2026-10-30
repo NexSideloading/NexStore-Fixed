@@ -44,7 +44,14 @@ struct MobileProvisionInfo: Codable {
 // MARK: - Service
 class CertificateCheckerService {
     static let shared = CertificateCheckerService()
-    private let baseURL = "https://sideloading.net/api/certchecker/checkCert"
+    private static let baseURL = "https://sideloading.net/api/certchecker/checkCert"
+    private let checkQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.name = "com.nexstore.certificate-checks"
+        queue.qualityOfService = .utility
+        queue.maxConcurrentOperationCount = 2
+        return queue
+    }()
 
     private init() {}
 
@@ -54,68 +61,59 @@ class CertificateCheckerService {
         mobileprovisionURL: URL? = nil,
         completion: @escaping (Result<CertificateCheckerResponse, Error>) -> Void
     ) {
-        var request = URLRequest(url: URL(string: baseURL)!)
-        request.httpMethod = "POST"
+        checkQueue.addOperation {
+            guard let p12Data = try? Data(contentsOf: p12URL) else {
+                let error = NSError(domain: "CertificateChecker", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unable to read the certificate file"])
+                DispatchQueue.main.async { completion(.failure(error)) }
+                return
+            }
 
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            let boundary = UUID().uuidString
+            var request = URLRequest(url: URL(string: Self.baseURL)!)
+            request.httpMethod = "POST"
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
-        var body = Data()
-
-        // Add p12 file
-        if let p12Data = try? Data(contentsOf: p12URL) {
+            var body = Data()
             body.append("--\(boundary)\r\n".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"p12\"; filename=\"certificate.p12\"\r\n".data(using: .utf8)!)
             body.append("Content-Type: application/x-pkcs12\r\n\r\n".data(using: .utf8)!)
             body.append(p12Data)
             body.append("\r\n".data(using: .utf8)!)
-        }
 
-        // Add password
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"password\"\r\n\r\n".data(using: .utf8)!)
-        body.append(password.data(using: .utf8)!)
-        body.append("\r\n".data(using: .utf8)!)
-
-        // Add mobileprovision file if provided
-        if let mobileURL = mobileprovisionURL, let mobileData = try? Data(contentsOf: mobileURL) {
             body.append("--\(boundary)\r\n".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"mobileprovision\"; filename=\"profile.mobileprovision\"\r\n".data(using: .utf8)!)
-            body.append("Content-Type: application/x-apple-aspen-mobileprovision\r\n\r\n".data(using: .utf8)!)
-            body.append(mobileData)
+            body.append("Content-Disposition: form-data; name=\"password\"\r\n\r\n".data(using: .utf8)!)
+            body.append(password.data(using: .utf8)!)
             body.append("\r\n".data(using: .utf8)!)
+
+            if let mobileURL = mobileprovisionURL, let mobileData = try? Data(contentsOf: mobileURL) {
+                body.append("--\(boundary)\r\n".data(using: .utf8)!)
+                body.append("Content-Disposition: form-data; name=\"mobileprovision\"; filename=\"profile.mobileprovision\"\r\n".data(using: .utf8)!)
+                body.append("Content-Type: application/x-apple-aspen-mobileprovision\r\n\r\n".data(using: .utf8)!)
+                body.append(mobileData)
+                body.append("\r\n".data(using: .utf8)!)
+            }
+
+            body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+            request.httpBody = body
+
+            // Keep the operation slot until the request completes, limiting the number of
+            // certificates being read, buffered, and uploaded at the same time.
+            let requestFinished = DispatchSemaphore(value: 0)
+            URLSession.shared.dataTask(with: request) { data, _, error in
+                defer { requestFinished.signal() }
+
+                let result: Result<CertificateCheckerResponse, Error>
+                if let error {
+                    result = .failure(error)
+                } else if let data {
+                    result = Result { try JSONDecoder().decode(CertificateCheckerResponse.self, from: data) }
+                } else {
+                    result = .failure(NSError(domain: "CertificateChecker", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"]))
+                }
+                DispatchQueue.main.async { completion(result) }
+            }.resume()
+            requestFinished.wait()
         }
-
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-        request.httpBody = body
-
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if error != nil {
-                DispatchQueue.main.async {
-                    completion(.failure(error!))
-                }
-                return
-            }
-
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(NSError(domain: "CertificateChecker", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
-                }
-                return
-            }
-
-            do {
-                let decoder = JSONDecoder()
-                let result = try decoder.decode(CertificateCheckerResponse.self, from: data)
-                DispatchQueue.main.async {
-                    completion(.success(result))
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    completion(.failure(error))
-                }
-            }
-        }.resume()
     }
 
     func checkMobileProvisionOnly(
