@@ -109,6 +109,8 @@ struct InstallPreviewView: View {
 
 		Task.detached {
 			do {
+				try await viewModel.enableDynamicDNSIfConfigured()
+
 				let handler = await ArchiveHandler(app: app, viewModel: viewModel)
 				try await handler.move()
 				

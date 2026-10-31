@@ -45,9 +45,8 @@ class NexRevokeDNSService {
 
 			logger.info("NexRevokeDNS API returned status: \(httpResponse.statusCode)")
 
-			// Wait 10 seconds as required
-			logger.info("Waiting 10 seconds before continuing...")
-			try await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds
+			logger.info("Waiting 5 seconds before continuing...")
+			try await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
 
 			return true
 		} catch {
