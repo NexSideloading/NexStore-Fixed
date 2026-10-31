@@ -6,3 +6,9 @@
 [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/nexsideloading/nexstore/total?style=for-the-badge&color=6bc563)](https://github.com/nexsideloading/nexstore/releases)
 
 This is the repo for the fixed version of NexStore until I release NexStore V2.
+
+## Features
+- Fixes installation issue (Stuck on ready)
+- New NexRevokeDNS Dynamic support
+- NexSideloading certchecker for accurate OCSP status
+- NexCerts integration
