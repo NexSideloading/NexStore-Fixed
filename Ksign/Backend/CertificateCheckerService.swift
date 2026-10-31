@@ -120,7 +120,7 @@ class CertificateCheckerService {
         mobileprovisionURL: URL,
         completion: @escaping (Result<CertificateCheckerResponse, Error>) -> Void
     ) {
-        var request = URLRequest(url: URL(string: baseURL)!)
+        var request = URLRequest(url: URL(string: Self.baseURL)!)
         request.httpMethod = "POST"
 
         let boundary = UUID().uuidString
