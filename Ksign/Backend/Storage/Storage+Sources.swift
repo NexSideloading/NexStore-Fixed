@@ -7,6 +7,7 @@
 
 import CoreData
 import AltSourceKit
+import NimbleJSON
 
 // MARK: - Class extension: Sources
 extension Storage {
@@ -92,16 +93,61 @@ extension Storage {
 	}
 
 
-	func addBuiltInSources() {
+	func addBuiltInSources(completion: @escaping () -> Void) {
 		let builtInSourceURLs = [
             "https://raw.githubusercontent.com/NexSideloading/app-source/refs/heads/main/repo.json",
             "https://community-apps.sidestore.io/sidecommunity.json",
             "https://github.com/LiveContainer/LiveContainer/releases/download/1.0/apps.json",
             "https://alt.crystall1ne.dev"
 		]
-		
+		let group = DispatchGroup()
+		let successLock = NSLock()
+		var allSucceeded = true
+		let fetchService = NBFetchService()
+
 		for urlString in builtInSourceURLs {
-			FR.handleSource(urlString) { }
+			guard let url = URL(string: urlString) else {
+				successLock.lock()
+				allSucceeded = false
+				successLock.unlock()
+				continue
+			}
+
+			group.enter()
+			fetchService.fetch(from: url) { (result: Result<ASRepository, Error>) in
+				DispatchQueue.main.async {
+					switch result {
+					case .success(let repository):
+						let identifier = repository.id ?? url.absoluteString
+						if self.sourceExists(identifier) {
+							group.leave()
+						} else {
+							self.addSource(url, repository: repository, id: identifier, isBuiltIn: true) { error in
+								if error != nil {
+									successLock.lock()
+									allSucceeded = false
+									successLock.unlock()
+								}
+								group.leave()
+							}
+						}
+					case .failure:
+						successLock.lock()
+						allSucceeded = false
+						successLock.unlock()
+						group.leave()
+					}
+				}
+			}
+		}
+
+		group.notify(queue: .main) {
+			successLock.lock()
+			let succeeded = allSucceeded
+			successLock.unlock()
+			if succeeded {
+				completion()
+			}
 		}
 	}
 

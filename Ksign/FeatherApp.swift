@@ -98,9 +98,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         _createPipeline()
         _createSourcesDirectory()
-        if !UserDefaults.standard.bool(forKey: "hasInitializedBuiltInSources") {
-            _initializeBuiltInSources()
-            UserDefaults.standard.set(true, forKey: "hasInitializedBuiltInSources")
+        // Bump the key so installs that were marked initialized before fetches
+        // completed get one successful initialization attempt after upgrading.
+        if !UserDefaults.standard.bool(forKey: "hasInitializedBuiltInSources-v2") {
+            _initializeBuiltInSources {
+                UserDefaults.standard.set(true, forKey: "hasInitializedBuiltInSources-v2")
+            }
         }
         
         _clean()
@@ -110,8 +113,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
     
-    private func _initializeBuiltInSources() { 
-        Storage.shared.addBuiltInSources()
+    private func _initializeBuiltInSources(completion: @escaping () -> Void) {
+        Storage.shared.addBuiltInSources(completion: completion)
     }
     
     private func _createPipeline() {
