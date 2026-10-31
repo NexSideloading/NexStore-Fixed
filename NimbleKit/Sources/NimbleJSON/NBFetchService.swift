@@ -68,19 +68,8 @@ extension NBFetchService {
 					let decodedData = try decoder.decode(T.self, from: data)
 					completion(.success(decodedData))
 				} catch let decodingError as DecodingError {
-					if case .dataCorrupted(let context) = decodingError {
-						if let underlyingError = context.underlyingError as NSError? {
-                            if let debugDesc = underlyingError.userInfo["NSDebugDescription"] {
-                                print(debugDesc)
-                                completion(.failure(NBFetchServiceError.parsingError(debugDesc)))
-                            } else {
-                                print(decodingError)
-                                completion(.failure(NBFetchServiceError.parsingError(decodingError)))
-                            }
-					} else {
-						print(decodingError)
-						completion(.failure(NBFetchServiceError.parsingError(decodingError)))
-					}
+					print(decodingError)
+					completion(.failure(NBFetchServiceError.parsingError(decodingError)))
 					
 				} catch {
                     print(error)
